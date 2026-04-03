@@ -1,0 +1,30 @@
+# Tested on Python 3.10 + CUDA 12 + A100
+# Install order: numpy/Cython first, then mujoco-py, then JAX, then the rest.
+# See setup_cluster.sh for the exact install sequence.
+
+numpy==1.26.4
+Cython<3
+
+jax[cuda12]==0.4.30
+flax==0.8.5
+optax==0.2.3
+tensorflow-probability==0.23.0
+
+gym==0.23.1
+dm-control==1.0.20
+mujoco==2.3.7
+mujoco-py==2.1.2.14
+
+ml-collections==0.1.1
+absl-py==2.1.0
+scipy==1.13.1
+tqdm==4.66.4
+wandb==0.17.5
+imageio==2.34.2
+moviepy==1.0.3
+gdown
+
+# Installed separately from git:
+# d4rl:  pip install "d4rl @ git+https://github.com/Farama-Foundation/d4rl@master"
+# mjrl:  git clone https://github.com/aravindr93/mjrl && pip install -e mjrl
+# mj_envs: git clone --recursive https://github.com/philipjball/mj_envs && pip install -e mj_envs --no-deps

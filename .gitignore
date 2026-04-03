@@ -1,0 +1,11 @@
+results/
+rlpd/
+__pycache__/
+*.pyc
+*.egg-info/
+.DS_Store
+.claude/
+rlpd_*.txt
+rlpd_*_err.txt
+*.zip
+upstream_rlpd/
