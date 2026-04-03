@@ -40,12 +40,15 @@ bash check_progress.sh         # monitor
 Run on a **GPU node** (not login node) so JAX can verify CUDA:
 
 ```bash
-# Get an interactive GPU (example for ASU Sol):
-salloc -G a100:1 -c 4 --mem=16G -t 0-1
+# Get an interactive GPU node (syntax varies by cluster):
+salloc --gres=gpu:1 -c 4 --mem=16G -t 0-1   # most clusters
+salloc -G a100:1 -c 4 --mem=16G -t 0-1       # ASU Sol
 
 # Run setup:
 bash ~/rlpd_experiments/setup_cluster.sh
 ```
+
+If your cluster uses a different GPU request syntax, edit line 2 of `run.sh`.
 
 See [requirements.txt](requirements.txt) for exact dependency versions.
 
