@@ -1,9 +1,15 @@
-"""train_abc.py — Test directions A (bootstrap masks), B (independent
-targets), C (plasticity reset). All on RLPD backbone."""
+"""train_abc.py -- Test directions A (bootstrap masks), B (independent
+targets), C (plasticity reset). All on RLPD backbone.
+
+Updated: logs roughness + grad_norm + grad_variation every 50k steps
+via compute_sharpness_bundle (see diagnostic.py).
+"""
+
 import os
 import csv
 import json
 import time
+
 import d4rl
 import d4rl.gym_mujoco
 import d4rl.locomotion
@@ -14,19 +20,25 @@ import numpy as np
 import tqdm
 from absl import app, flags
 from ml_collections import config_flags
+
 import wandb
+
 from sac_learner_v2 import SACLearnerV2
 from rlpd.data import ReplayBuffer
 from rlpd.data.d4rl_datasets import D4RLDataset
+
 try:
     from rlpd.data.binary_datasets import BinaryDataset
 except Exception:
     pass
+
 from rlpd.evaluation import evaluate
 from rlpd.wrappers import wrap_gym
-from diagnostic import setup_diag_buffer, compute_roughness_only
+
+from diagnostic import setup_diag_buffer, compute_sharpness_bundle
 
 FLAGS = flags.FLAGS
+
 flags.DEFINE_string("project_name", "rlpd_abc", "wandb project.")
 flags.DEFINE_string("env_name", "halfcheetah-expert-v2", "Environment.")
 flags.DEFINE_float("offline_ratio", 0.5, "Offline ratio.")
@@ -92,6 +104,7 @@ def main(_):
 
     kwargs = dict(FLAGS.config)
     kwargs.pop("model_cls")
+
     nqs = kwargs.get("num_qs", 10)
     mqs = kwargs.get("num_min_qs", nqs)
     ln = kwargs.get("critic_layer_norm", True)
@@ -105,6 +118,7 @@ def main(_):
     if tag != "baseline":
         parts.insert(-1, tag)
     run_name = "_".join(parts)
+
     log_dir = os.path.join(FLAGS.results_dir, run_name)
     os.makedirs(log_dir, exist_ok=True)
 
@@ -147,7 +161,7 @@ def main(_):
         FLAGS.max_steps)
     replay_buffer.seed(FLAGS.seed)
 
-    # Fixed (s, a) buffer for roughness probe (computed every 50k steps).
+    # Fixed (s, a) buffer for sharpness probes (computed every 50k steps).
     diag_buf = setup_diag_buffer(ds, env)
 
     log_rows = []
@@ -157,12 +171,10 @@ def main(_):
     did_reset = False
 
     observation, done = env.reset(), False
-
     for i in tqdm.tqdm(
             range(0, FLAGS.max_steps + 1),
             smoothing=0.1,
             disable=not FLAGS.tqdm):
-
         if i < FLAGS.start_training:
             action = env.action_space.sample()
         else:
@@ -171,7 +183,6 @@ def main(_):
         next_observation, reward, done, info = env.step(action)
         mask = 1.0 if (
             not done or "TimeLimit.truncated" in info) else 0.0
-
         replay_buffer.insert(dict(
             observations=observation,
             actions=action,
@@ -189,7 +200,6 @@ def main(_):
                     {"training/{}".format(decode[k]): v}, step=i)
 
         if i >= FLAGS.start_training:
-
             # Direction C: critic reset
             if (FLAGS.critic_reset_step > 0
                     and i == FLAGS.critic_reset_step
@@ -212,11 +222,9 @@ def main(_):
             total = FLAGS.batch_size * FLAGS.utd_ratio
             n_offline = int(total * FLAGS.offline_ratio)
             n_online = total - n_offline
-
             online_batch = replay_buffer.sample(n_online)
             offline_batch = ds.sample(n_offline)
             batch = combine(offline_batch, online_batch)
-
             if "antmaze" in FLAGS.env_name:
                 batch["rewards"] = batch["rewards"] - 1
 
@@ -231,64 +239,79 @@ def main(_):
                     wandb.log(
                         {"training/{}".format(k): v}, step=i)
 
-        if i % FLAGS.eval_interval == 0:
-            eval_info = evaluate(
-                agent, eval_env,
-                num_episodes=FLAGS.eval_episodes,
-                save_video=FLAGS.save_video)
-            success = eval_info.get("return", 0.0)
-            try:
-                raw_env = eval_env
-                while hasattr(raw_env, "env"):
-                    raw_env = raw_env.env
-                norm_score = float(
-                    raw_env.get_normalized_score(success))
-            except Exception:
-                norm_score = success * 100.0
+            if i % FLAGS.eval_interval == 0:
+                eval_info = evaluate(
+                    agent, eval_env,
+                    num_episodes=FLAGS.eval_episodes,
+                    save_video=FLAGS.save_video)
+                success = eval_info.get("return", 0.0)
 
-            elapsed = (time.time() - t_start) / 60.0
-
-            # Roughness probe every 50k steps (cheap: 100 perturbations on 1000 (s,a))
-            roughness = ""
-            if i % 50000 == 0:
                 try:
-                    roughness = round(
-                        compute_roughness_only(agent, diag_buf), 6)
-                    wandb.log({"diag/roughness": roughness}, step=i)
-                except Exception as e:
-                    print("[ROUGHNESS {:>7}] failed: {}".format(i, e),
-                          flush=True)
+                    raw_env = eval_env
+                    while hasattr(raw_env, "env"):
+                        raw_env = raw_env.env
+                    norm_score = float(
+                        raw_env.get_normalized_score(success))
+                except Exception:
+                    norm_score = success * 100.0
 
-            if (i % (FLAGS.eval_interval * 4) == 0
-                    or i < FLAGS.eval_interval * 3):
-                print(
-                    "[EVAL {:>7}] score={:.1f} success={:.3f}"
-                    " tag={} elapsed={:.1f}min rough={}".format(
-                        i, norm_score, success, tag, elapsed, roughness),
-                    flush=True)
+                elapsed = (time.time() - t_start) / 60.0
 
-            for k, v in eval_info.items():
-                wandb.log(
-                    {"evaluation/{}".format(k): v}, step=i)
+                # Sharpness bundle every 50k steps: roughness (perturbation
+                # variance), grad_norm (||grad_a Qbar||), grad_variation
+                # (change in gradient under perturbation). Total cost ~3x
+                # roughness-alone; still cheap relative to training.
+                roughness = ""
+                grad_norm = ""
+                grad_variation = ""
+                if i % 50000 == 0:
+                    try:
+                        bundle = compute_sharpness_bundle(agent, diag_buf)
+                        roughness = round(bundle["roughness"], 6)
+                        grad_norm = round(bundle["grad_norm"], 6)
+                        grad_variation = round(bundle["grad_variation"], 6)
+                        wandb.log({
+                            "diag/roughness": roughness,
+                            "diag/grad_norm": grad_norm,
+                            "diag/grad_variation": grad_variation,
+                        }, step=i)
+                    except Exception as e:
+                        print("[SHARPNESS {:>7}] failed: {}".format(i, e),
+                              flush=True)
 
-            row = {
-                "step": i,
-                "success_rate": success,
-                "normalized_score": norm_score,
-                "elapsed_min": elapsed,
-                "tag": tag,
-                "critic_loss": last_info.get(
-                    "critic_loss", 0.0),
-                "mean_q": last_info.get("q", 0.0),
-                "roughness": roughness,
-            }
-            log_rows.append(row)
+                if (i % (FLAGS.eval_interval * 4) == 0
+                        or i < FLAGS.eval_interval * 3):
+                    print(
+                        "[EVAL {:>7}] score={:.1f} success={:.3f}"
+                        " tag={} elapsed={:.1f}min"
+                        " rough={} |gradQ|={} dgradQ={}".format(
+                            i, norm_score, success, tag, elapsed,
+                            roughness, grad_norm, grad_variation),
+                        flush=True)
 
-            with open(log_path, "w", newline="") as f:
-                w = csv.DictWriter(
-                    f, fieldnames=log_rows[0].keys())
-                w.writeheader()
-                w.writerows(log_rows)
+                for k, v in eval_info.items():
+                    wandb.log(
+                        {"evaluation/{}".format(k): v}, step=i)
+
+                row = {
+                    "step": i,
+                    "success_rate": success,
+                    "normalized_score": norm_score,
+                    "elapsed_min": elapsed,
+                    "tag": tag,
+                    "critic_loss": last_info.get(
+                        "critic_loss", 0.0),
+                    "mean_q": last_info.get("q", 0.0),
+                    "roughness": roughness,
+                    "grad_norm": grad_norm,
+                    "grad_variation": grad_variation,
+                }
+                log_rows.append(row)
+                with open(log_path, "w", newline="") as f:
+                    w = csv.DictWriter(
+                        f, fieldnames=log_rows[0].keys())
+                    w.writeheader()
+                    w.writerows(log_rows)
 
     if log_rows:
         scores = [r["normalized_score"] for r in log_rows]
