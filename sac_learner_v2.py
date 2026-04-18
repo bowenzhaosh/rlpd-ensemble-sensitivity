@@ -128,7 +128,12 @@ class SACLearnerV2(Agent):
         critic_def = Ensemble(critic_cls, num=num_qs)
 
         # Init produces 'params' and (if spec norm) 'batch_stats'.
-        critic_variables = critic_def.init(critic_key, observations, actions)
+        if use_spec_norm:
+            critic_variables = critic_def.init(
+                critic_key, observations, actions, False, True)
+        else:
+            critic_variables = critic_def.init(
+                critic_key, observations, actions)
         critic_params = critic_variables["params"]
         critic_batch_stats = critic_variables.get(
             "batch_stats", flax.core.FrozenDict({}))
@@ -294,8 +299,7 @@ class SACLearnerV2(Agent):
                     {"params": critic_params,
                      "batch_stats": self.critic.batch_stats},
                     batch["observations"],
-                    batch["actions"], True,
-                    update_stats=True,
+                    batch["actions"], True, True,
                     rngs={"dropout": key},
                     mutable=["batch_stats"])
                 new_batch_stats = new_state["batch_stats"]
