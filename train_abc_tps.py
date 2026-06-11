@@ -1,5 +1,6 @@
-"""train_abc.py — Test directions A (bootstrap masks), B (independent
-targets), C (plasticity reset). All on RLPD backbone."""
+"""train_abc_tps.py — train_abc.py + TD3-style target-policy smoothing
+(TPS) arm. Generated from train_abc.py; only the learner class, the
+target_smoothing_sigma flag, and the run name differ."""
 import os
 import csv
 import json
@@ -15,7 +16,7 @@ import tqdm
 from absl import app, flags
 from ml_collections import config_flags
 import wandb
-from sac_learner_v2 import SACLearnerV2
+from sac_learner_v2_tps import SACLearnerV2TPS as SACLearnerV2
 from rlpd.data import ReplayBuffer
 from rlpd.data.d4rl_datasets import D4RLDataset
 try:
@@ -48,6 +49,8 @@ flags.DEFINE_integer("critic_reset_step", 0,
                      "C: reset critic at this step. 0 = disabled.")
 flags.DEFINE_integer("actor_delay", 1,
                      "Update actor every N env steps. 1 = every step.")
+flags.DEFINE_float("target_smoothing_sigma", 0.2,
+                   "TD3-style target policy smoothing scale (TPS arm).")
 config_flags.DEFINE_config_file(
     "config", "configs/sac_config.py",
     "Config.", lock_config=False)
@@ -101,7 +104,8 @@ def main(_):
     # Run name encodes every config that distinguishes runs, so paired runs
     # in the same SLURM job never overwrite each other's results.
     parts = [FLAGS.env_name, "nq{}".format(nqs), "mq{}".format(mqs),
-             drop_tag, "s{}".format(FLAGS.seed)]
+             drop_tag, "tps{}".format(FLAGS.target_smoothing_sigma),
+             "s{}".format(FLAGS.seed)]
     if tag != "baseline":
         parts.insert(-1, tag)
     run_name = "_".join(parts)
@@ -140,6 +144,7 @@ def main(_):
         env.action_space,
         bootstrap_mask=FLAGS.bootstrap_mask,
         independent_targets=FLAGS.independent_targets,
+        target_smoothing_sigma=FLAGS.target_smoothing_sigma,
         **kwargs)
 
     replay_buffer = ReplayBuffer(
@@ -200,6 +205,7 @@ def main(_):
                     env.action_space,
                     bootstrap_mask=FLAGS.bootstrap_mask,
                     independent_targets=FLAGS.independent_targets,
+                    target_smoothing_sigma=FLAGS.target_smoothing_sigma,
                     **kwargs)
                 agent = agent.replace(
                     critic=fresh.critic,
@@ -305,6 +311,7 @@ def main(_):
             "env": FLAGS.env_name,
             "seed": FLAGS.seed,
             "tag": tag,
+            "target_smoothing_sigma": FLAGS.target_smoothing_sigma,
             "nqs": nqs,
             "ln": ln,
             "bootstrap_mask": FLAGS.bootstrap_mask,

@@ -130,6 +130,31 @@ def compute_roughness_only(agent, diag_buf):
     return _compute_roughness(agent, diag_buf["obs"], diag_buf["act_expert"])
 
 
+def compute_roughness_multi(agent, diag_buf):
+    """Roughness at sigma in {0.01, 0.05, 0.1} plus the |Q| scale of the
+    same diag buffer, so roughness can be normalized by Q magnitude
+    post-hoc (roughness / q_abs_mean_diag^2) without re-running.
+
+    'roughness' (sigma=0.05) is identical to compute_roughness_only.
+    Probe only — does not touch the agent or training RNG.
+    """
+    obs = diag_buf["obs"]
+    act = diag_buf["act_expert"]
+    out = {}
+    # Distinct seeds per sigma: shared perturbation directions would make
+    # the three columns scaled copies of one measurement, not a sweep.
+    for idx, (key, sigma) in enumerate((("roughness_s001", 0.01),
+                                        ("roughness", 0.05),
+                                        ("roughness_s01", 0.1))):
+        out[key] = round(
+            _compute_roughness(agent, obs, act, sigma=sigma,
+                               seed=42 + idx), 6)
+    qs = _get_qs(agent, obs, act)  # [num_qs, n_samples]
+    out["q_abs_mean_diag"] = round(
+        float(np.mean(np.abs(qs.mean(axis=0)))), 6)
+    return out
+
+
 def run_diagnostic(agent, diag_buf, step, diag_path):
     obs = diag_buf["obs"]
     act_ex = diag_buf["act_expert"]

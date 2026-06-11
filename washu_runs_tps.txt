@@ -1,0 +1,38 @@
+# TD3-target-policy-smoothing (TPS) arm — review fix item 3, second
+# surgical smoothness intervention. Queued AFTER the 62-run seed fleet.
+# Format: env,seed,nqs,minqs,dropout,tps,maxsteps
+# sigma=0 baselines come from the main fleet (washu_runs.txt).
+# Dose-response on pen at N=2 (sharp/weak) and N=10 (already-smooth
+# control: prediction = little/no gain, mirroring the dropout story);
+# door spot-checks transfer at the TD3-default sigma=0.2.
+# Ordered seed-first for incremental completeness.
+
+# ---- seed 0 (8) ----
+pen-binary-v0,0,2,2,0,0.1,1000000
+pen-binary-v0,0,2,2,0,0.2,1000000
+pen-binary-v0,0,2,2,0,0.3,1000000
+pen-binary-v0,0,10,2,0,0.1,1000000
+pen-binary-v0,0,10,2,0,0.2,1000000
+pen-binary-v0,0,10,2,0,0.3,1000000
+door-binary-v0,0,2,2,0,0.2,1000000
+door-binary-v0,0,10,2,0,0.2,1000000
+
+# ---- seed 1 (8) ----
+pen-binary-v0,1,2,2,0,0.1,1000000
+pen-binary-v0,1,2,2,0,0.2,1000000
+pen-binary-v0,1,2,2,0,0.3,1000000
+pen-binary-v0,1,10,2,0,0.1,1000000
+pen-binary-v0,1,10,2,0,0.2,1000000
+pen-binary-v0,1,10,2,0,0.3,1000000
+door-binary-v0,1,2,2,0,0.2,1000000
+door-binary-v0,1,10,2,0,0.2,1000000
+
+# ---- seed 2 (8) ----
+pen-binary-v0,2,2,2,0,0.1,1000000
+pen-binary-v0,2,2,2,0,0.2,1000000
+pen-binary-v0,2,2,2,0,0.3,1000000
+pen-binary-v0,2,10,2,0,0.1,1000000
+pen-binary-v0,2,10,2,0,0.2,1000000
+pen-binary-v0,2,10,2,0,0.3,1000000
+door-binary-v0,2,2,2,0,0.2,1000000
+door-binary-v0,2,10,2,0,0.2,1000000

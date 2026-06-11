@@ -11,7 +11,8 @@ optax==0.2.3
 tensorflow-probability==0.23.0
 
 gym==0.23.1
-dm-control==1.0.20
+# dm-control 1.0.20 requires mujoco 3.x — 1.0.14 is the pair for mujoco 2.3.7
+dm-control==1.0.14
 mujoco==2.3.7
 mujoco-py==2.1.2.14
 
