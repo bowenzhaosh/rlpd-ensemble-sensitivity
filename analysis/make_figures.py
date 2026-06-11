@@ -283,7 +283,7 @@ def fig_minq(ts, runs):
     arms = [(1, 0.0, "#882255", "M=1"), (1, 0.01, "#882255", "M=1, drop"),
             (2, 0.0, C_NODROP, "M=2"), (2, 0.01, C_NODROP, "M=2, drop")]
     for ax, col, ylab, logy in (
-            (axes[0], "q_abs_mean_diag", r"$|\bar Q|$ on probe batch", True),
+            (axes[0], "q_abs_mean_diag", r"$|\bar Q|$ on probe set", True),
             (axes[1], "frac", "score", False),
             (axes[2], "sharp_s005", r"normalized sharpness $\tilde S$", True)):
         for mq, drop, color, label in arms:
