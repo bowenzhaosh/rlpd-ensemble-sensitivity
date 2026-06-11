@@ -9,3 +9,10 @@ rlpd_*.txt
 rlpd_*_err.txt
 *.zip
 upstream_rlpd/
+
+# generated analysis outputs (regenerate with analysis/run_all.sh)
+analysis/out/
+paper/figures/*.pdf
+paper/build/
+# data/: raw run dirs + slurm logs ignored via results/ + rlpd_*.txt above;
+# curated CSVs and READMEs in data/ stay tracked.
