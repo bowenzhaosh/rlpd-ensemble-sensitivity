@@ -75,13 +75,18 @@ actor's gradient actually climbs --- measured as a $Q$-scale-normalized
 sharpness $\nsharp$: the variance of $\Sbar(s,a{+}\epsilon)$ under small action
 perturbations, normalized by $|\Sbar|^2$. Across a multi-seed grid on sparse
 Adroit manipulation (pen, door; $N{\in}\{2,4,6,10\}$, $M{\in}\{1,2\}$, dropout
-$p{\in}\{0,0.01\}$), $\nsharp$ tracks final score where head- and mask-diversity
-metrics do not, and reproduces the dropout--ensemble interaction: dropout
-smooths $\Sbar$ only when $N$ is small. Two interventions separate the
+$p{\in}\{0,0.01\}$), $\nsharp$ tracks final score and reproduces the
+dropout--ensemble interaction (dropout smooths $\Sbar$ only when $N$ is
+small), while configurations matched in $\nsharp$ but differing widely in
+head count and mask diversity score alike. Two interventions separate the
 candidate mechanisms: min-$Q$ subsetting moves pessimism ($|\Sbar|$) with
-little effect on $\nsharp$, while TD3-style target-policy smoothing --- an
-action-space knob that adds no ensemble diversity --- shifts performance in
-the predicted $N$-dependent direction. Sharpness measured at early checkpoints
+little effect on $\nsharp$, dissociating the two axes, while a pre-registered
+TD3-style target-policy-smoothing arm --- an action-space knob that adds no
+ensemble diversity --- tests the account's central prediction: dose-dependent
+gains at small $N$ only.
+% [FINALIZE] once 78877 lands, restate as the observed outcome (confirmed /
+% partial / refuted) -- this sentence currently states the test, not a result.
+Sharpness measured at early checkpoints
 predicts final score across configurations, making $\nsharp$ a practical
 selection signal rather than a post-hoc diagnostic.
 \end{abstract}
@@ -140,13 +145,17 @@ claim-bearing configuration:
   result as one saturation curve.
   \item \textbf{Dissociation from diversity and pessimism.} Across all
   configurations, final $\nsharp$ tracks final score
-  (Spearman $\rho_s{=}\SharpRho{}$, $n{=}\SharpRhoN$ runs); head/mask variance
-  does not, and min-$Q$ subsetting moves $|\Sbar|$ (pessimism) while leaving
-  $\nsharp$ essentially unchanged (\S\ref{sec:interventions}).
+  (Spearman $\rho_s{=}\SharpRho{}$, $n{=}\SharpRhoN$ runs); configurations
+  matched in $\nsharp$ but maximally different in explicit/implicit diversity
+  ($N{=}2{+}$dropout vs.\ $N{=}10$ plain) score alike, and min-$Q$ subsetting
+  moves $|\Sbar|$ (pessimism) while leaving $\nsharp$ essentially unchanged
+  (\S\ref{sec:interventions}).
   \item \textbf{Intervention.} TD3-style target-policy smoothing
-  \citep{fujimoto2018td3} --- which smooths targets in action space without
-  touching ensemble size, dropout, or the function class --- moves performance
-  in the predicted $N$-dependent direction (\S\ref{sec:interventions}).
+  \citep{fujimoto2018td3} smooths targets in action space without touching
+  ensemble size, dropout, or the function class --- a controlled test whose
+  prediction (dose-dependent gains at $N{=}2$, none at $N{=}10$) was fixed
+  before the runs (\S\ref{sec:interventions}).
+  % [FINALIZE] state the observed TPS outcome here once 78877 lands.
   \item \textbf{Prospective value.} $\nsharp$ at the 100k-step checkpoint
   predicts final score across configurations
   ($\rho_s{=}\ProspectiveRho$, leave-one-config-out range
@@ -307,8 +316,10 @@ where they decouple, score follows $\nsharp$.
 min ($M{=}1$, no dropout) sends $|\Sbar|$ on the probe batch up by orders of
 magnitude and the run collapses --- classic unchecked overestimation
 (Fig.~\ref{fig:minq}, App.). The point for our thesis is what does \emph{not}
-happen: normalized sharpness barely moves while $|\Sbar|$ explodes, and
-restoring the min changes pessimism without making $\Sbar$ smoother.
+happen: the collapse is an amplitude event, not a geometry event ---
+normalized sharpness stays in the range of healthy runs while $|\Sbar|$
+leaves it by orders of magnitude --- and restoring the min changes pessimism
+without making $\Sbar$ smoother.
 Pessimism is necessary on sparse Adroit (it prevents divergence), but it is a
 different resource from smoothness: $M$ sets amplitude control, $N$ and
 dropout set geometry. This is also why the normalization in
@@ -410,9 +421,9 @@ $\nsharp$, nor interact with exploration.
 pessimism device and not as a diversity device, but as a smoother of the one
 function the actor touches: $\Sbar$. That reading unifies dropout's
 small-$N$ gains and large-$N$ inertness as one saturation curve, survives a
-normalization that removes the $Q$-scale confound, is corroborated by an
-ensemble-free smoothing intervention, and yields a free early-selection
-signal. The natural next target is flow-based offline-to-online methods such
+normalization that removes the $Q$-scale confound, makes a falsifiable
+prediction under an ensemble-free smoothing intervention
+(\S\ref{sec:interventions}), and yields a free early-selection signal. The natural next target is flow-based offline-to-online methods such
 as FQL \citep{park2025flow}, where ensembles are replaced by structured
 critics: if the smoothness account is right, $\nsharp$ should predict
 performance there without any ensemble in sight.
@@ -519,8 +530,12 @@ adjacent to) the new multi-seed bands and matches the April ordering:
 % variance figure regenerated from diagnostic-era data or fleet mean_q logs,
 % making the "diversity co-moves only through sharpness" claim quantitative
 % (partial correlation of head_var with score given sharpness).
-Head variance falls with $N$ and mask variance appears only with dropout, as
-expected by construction; across the configurations where diversity and
+Measured head/mask variance comes from the earlier single-seed diagnostic
+runs (April era, App.~\ref{app:replication} quarantine applies); the
+dissociation argument in \S\ref{sec:sharp} therefore rests on the
+\emph{designed} diversity contrasts, not on these measurements. In those
+diagnostics, head variance falls with $N$ and mask variance appears only with
+dropout, as expected by construction; across the configurations where diversity and
 $\nsharp$ decouple ($N{=}10{+}$dropout: diversity up, $\nsharp$ flat, score
 flat; $N{=}2{+}$dropout vs.\ $N{=}10$: diversity very different, $\nsharp$ and
 score similar), score follows $\nsharp$.

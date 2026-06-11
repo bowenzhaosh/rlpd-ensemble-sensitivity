@@ -279,7 +279,7 @@ def fig_minq(ts, runs):
     t = ts[(ts["env"] == "pen-binary-v0") & (ts["nq"] == 2) & (ts["tps"] == 0)]
     if t[t["mq"] == 1].empty:
         return placeholder(path, "no M=1 runs synced yet")
-    fig, axes = plt.subplots(1, 3, figsize=(6.6, 2.0))
+    fig, axes = plt.subplots(1, 3, figsize=(6.6, 2.0), constrained_layout=True)
     arms = [(1, 0.0, "#882255", "M=1"), (1, 0.01, "#882255", "M=1, drop"),
             (2, 0.0, C_NODROP, "M=2"), (2, 0.01, C_NODROP, "M=2, drop")]
     for ax, col, ylab, logy in (
