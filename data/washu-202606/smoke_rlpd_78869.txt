@@ -1,0 +1,46 @@
+Warning: All of online environments libraries in D4RL have been moved ]8;;https://github.com/Farama-Foundation/Gymnasium\Gymnasium]8;;\, ]8;;https://github.com/Farama-Foundation/MiniGrid\MiniGrid]8;;\ and ]8;;https://github.com/Farama-Foundation/Gymnasium-Robotics\Gymnasium-Robotics]8;;\, and all offline datasets in D4RL have been moved to ]8;;https://github.com/Farama-Foundation/Minari\Minari]8;;\.
+These new versions include large bug fixes, new versions of Python, and are where all new development will continue. Please upgrade these libraries as soon as you're able to do so.
+If you'd like to read more about the story behind this switch, please check out ]8;;https://farama.org/Announcing-Minari\this blog post]8;;\.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+/home/compute/zhao.b/miniforge3/envs/rlpd/lib/python3.10/site-packages/Cython/Distutils/old_build_ext.py:15: DeprecationWarning: dep_util is Deprecated. Use functions from setuptools instead.
+  from distutils.dep_util import newer, newer_group
+<frozen importlib._bootstrap>:283: DeprecationWarning: the load_module() method is deprecated and slated for removal in Python 3.12; use exec_module() instead
+pybullet build time: Jan 29 2025 23:16:28
+/home/compute/zhao.b/miniforge3/envs/rlpd/lib/python3.10/site-packages/pybullet_envs/env_bases.py:8: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import parse_version
+/home/compute/zhao.b/miniforge3/envs/rlpd/lib/python3.10/site-packages/ml_collections/config_flags/config_flags.py:19: DeprecationWarning: the imp module is deprecated in favour of importlib and slated for removal in Python 3.12; see the module's documentation for alternative uses
+  import imp
+/home/compute/zhao.b/miniforge3/envs/rlpd/lib/python3.10/site-packages/wandb/analytics/sentry.py:90: SentryHubDeprecationWarning: `sentry_sdk.Hub` is deprecated and will be removed in a future major release. Please consult our 1.x to 2.x migration guide for details on how to migrate `Hub` usage to the new API: https://docs.sentry.io/platforms/python/migration/1.x-to-2.x
+  self.hub = sentry_sdk.Hub(client)
+/home/compute/zhao.b/miniforge3/envs/rlpd/lib/python3.10/site-packages/gym/envs/registration.py:595: UserWarning: [33mWARN: Overriding environment door-v0[0m
+  logger.warn(f"Overriding environment {id}")
+/home/compute/zhao.b/miniforge3/envs/rlpd/lib/python3.10/site-packages/gym/envs/registration.py:595: UserWarning: [33mWARN: Overriding environment hammer-v0[0m
+  logger.warn(f"Overriding environment {id}")
+/home/compute/zhao.b/miniforge3/envs/rlpd/lib/python3.10/site-packages/gym/envs/registration.py:595: UserWarning: [33mWARN: Overriding environment pen-v0[0m
+  logger.warn(f"Overriding environment {id}")
+/home/compute/zhao.b/miniforge3/envs/rlpd/lib/python3.10/site-packages/gym/envs/registration.py:595: UserWarning: [33mWARN: Overriding environment relocate-v0[0m
+  logger.warn(f"Overriding environment {id}")
+
+============================================================
+RLPD A/B/C Experiment
+Env: pen-binary-v0 | Seed: 0 | nq=10 ln=True
+A(bmask)=False B(indep)=False C(reset)=0
+Tag: baseline | Dir: results_smoke/pen-binary-v0_nq10_mq2_nodrop_s0
+============================================================
+
+/home/compute/zhao.b/miniforge3/envs/rlpd/lib/python3.10/site-packages/gym/spaces/box.py:84: UserWarning: [33mWARN: Box bound precision lowered by casting to float32[0m
+  logger.warn(f"Box bound precision lowered by casting to {self.dtype}")
+I0610 07:45:20.673478 140152102336320 xla_bridge.py:889] Unable to initialize backend 'rocm': module 'jaxlib.xla_extension' has no attribute 'GpuAllocatorConfig'
+I0610 07:45:20.676421 140152102336320 xla_bridge.py:889] Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+[EVAL       0] score=-9945.0 success=-99.450 tag=baseline elapsed=0.0min rough=0.00013
+[EVAL    5000] score=-10000.0 success=-100.000 tag=baseline elapsed=1.6min rough=
+[EVAL   10000] score=-9770.0 success=-97.700 tag=baseline elapsed=5.3min rough=
+[EVAL   20000] score=-8435.0 success=-84.350 tag=baseline elapsed=8.3min rough=
+
+FINAL: tag=baseline score=-9545.0 peak=-8435.0
+PROBE COLUMNS OK: {'roughness': '0.00013', 'roughness_s001': '5e-06', 'roughness_s01': '0.000492', 'q_abs_mean_diag': '0.14553'}
+TIMING: 10k->20k = 3.04 min (April A100 ref: 2.2); projected 1M nq=10 run = 306 min = 5.10 h
+GATE: PASS — fits the 8h walltime cap with margin
+SMOKE OK
