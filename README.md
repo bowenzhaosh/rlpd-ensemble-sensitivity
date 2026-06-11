@@ -2,6 +2,15 @@
 
 How do critic ensemble size, min-Q subsetting, and dropout rate affect online RL fine-tuning performance? This repo runs controlled experiments on the [RLPD](https://github.com/ikostrikov/rlpd) backbone across Adroit binary manipulation tasks.
 
+> **Project status (2026-06-11).** Multi-seed fleet (62 runs, job 78870) +
+> TD3-target-policy-smoothing arm (24 runs, job 78877) executing on WashU
+> RTX-4000s, ETA ~06-15. Paper draft: `paper/main.tex` (NeurIPS-2026 workshop
+> target), wired to auto-generated figures/tables — see `paper/README.md`.
+> When the fleet lands: `bash analysis/run_all.sh`. Data provenance (April vs
+> June eras): `data/README.md`. April-era launchers below (`submit_all.sh`,
+> `experiments.txt`, `run.sh`) are superseded for the current fleet by
+> `washu_*.sbatch` + `washu_runs*.txt`.
+
 Built on `SACLearnerV2`, a modified SAC agent with configurable:
 - **Ensemble size** (num_qs): 2, 4, 6, 10 Q-heads
 - **Min-Q subset** (num_min_qs): how many heads to min over for targets
