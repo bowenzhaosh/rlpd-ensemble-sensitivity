@@ -161,7 +161,7 @@ pip install -q \
   optax==0.2.3 \
   tensorflow-probability==0.23.0 \
   gym==0.23.1 \
-  "dm-control==1.0.20" \
+  "dm-control==1.0.14" \
   mujoco==2.3.7 \
   ml-collections==0.1.1 \
   absl-py==2.1.0 \
