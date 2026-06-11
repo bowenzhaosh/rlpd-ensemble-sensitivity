@@ -12,11 +12,14 @@ overstate what the data contains.
 1. `bash analysis/run_all.sh` — sync, rebuild everything, recompile.
 2. Confirm the banner flipped (status.tex → `\provisionalfalse`) and no red
    `[pending]` remains (`grep -c pendingnum build/main.log` should drop).
-3. Resolve the three `[FINALIZE]` comments in `main.tex`:
-   - TPS outcome sentence in §4.3 (state the observed direction, incl. if it
-     refutes the prediction — the pre-registered rule is in analysis/README).
-   - App. E diversity paragraph (one quantitative line after /compare-runs).
-   - Repro appendix: repo URL + commit hash; anonymization check.
+3. Resolve EVERY `[FINALIZE]` comment (`grep -n FINALIZE main.tex`) and
+   verify EVERY `\prov{...}`-wrapped results sentence against the regenerated
+   tables (`grep -n 'prov{' main.tex`) — those daggers are the hand-written
+   claims the auto-pipeline cannot retract. Key items: TPS outcome (state the
+   observed direction, incl. refutation — pre-registered rule in
+   analysis/README), M=1+dropout rescue interpretation (§4.3), σ-robustness
+   requirement (App. C), diversity paragraph quantitative line, repo
+   URL + anonymization.
 4. Run `/results-audit` then `/claim-check paper/main.tex` (citation pass).
 5. Swap in the target workshop's actual `neurips_2026.sty` + fit to its page
    limit (current: ~6.3pp main text; cut order if a 4-5pp limit applies:
