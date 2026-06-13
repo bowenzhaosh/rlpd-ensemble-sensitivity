@@ -25,7 +25,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from rlpd_common import (PAPER_TABLES, TIDY, dropout_pairs, mannwhitney,
-                         sign_test, spearman_loco)
+                         sign_test, spearman_config_perm, spearman_loco)
 
 ENVS = ["pen-binary-v0", "door-binary-v0"]
 ENV_SHORT = {"pen-binary-v0": "pen", "door-binary-v0": "door"}
@@ -158,6 +158,19 @@ def write_signtests(runs, macros):
         macros.append(macro(mname, fmt_band(d)))
         lines.append(f"dropout $\\Delta$ at $N$={nq} (pen) & "
                      f"{fmt_band(d)} & & \\\\")
+    # (b2) INTERACTION TEST (post-hoc, not pre-registered): is the dropout
+    # benefit larger at N=2 than at N=10? The two delta sets are different
+    # configs, so distributional (Mann-Whitney), not seed-paired.
+    for env, mname in (("pen-binary-v0", "DropInteractionP"),
+                       ("door-binary-v0", "DropInteractionPDoor")):
+        d2 = pairs[(pairs["env"] == env) & (pairs["nq"] == 2)]["delta"]
+        d10 = pairs[(pairs["env"] == env) & (pairs["nq"] == 10)]["delta"]
+        pint = mannwhitney(d2, d10)
+        macros.append(macro(mname, fmt_p(pint)))
+        if env == "pen-binary-v0":
+            lines.append(
+                f"$\\Delta(N{{=}}2)$ vs $\\Delta(N{{=}}10)$ (pen, interaction MW)"
+                f" & \\multicolumn{{2}}{{c}}{{separated}} & {fmt_p(pint)} \\\\")
     # (c) N=10 > N=2, no dropout: DESCRIPTIVE concordance only. The
     # pre-registered discipline reserves seed-level paired TESTS for dropout
     # contrasts (rule 3); this row reports counts without a p-value.
@@ -213,11 +226,31 @@ def write_prospective(ts, runs, macros):
             f"[{st['loco_lo']:.2f}, {st['loco_hi']:.2f}] & "
             f"{st2['rho']:.2f} & {st['n']} \\\\")
         if t_step == 100000:
+            # Pre-registered POOLED stat (anticonservative: pseudoreplicated
+            # over seed-rows). Kept for transparency, flagged as such in text.
             macros += [macro("ProspectiveRho", f"{st['rho']:.2f}"),
                        macro("ProspectiveLoco",
                              f"[{st['loco_lo']:.2f}, {st['loco_hi']:.2f}]"),
                        macro("ProspectiveN", str(st["n"])),
                        macro("ProspectiveRhoExclM", f"{st2['rho']:.2f}")]
+            # Honest CONFIG-LEVEL stat (one seed-median point per config) with a
+            # permutation null + leave-one-CONFIG-out range. This is the number
+            # the prose leads with.
+            cp = spearman_config_perm(d, "sharp_s005", "final_frac",
+                                      ["nq", "mq", "drop"])
+            cp2 = spearman_config_perm(d2, "sharp_s005", "final_frac",
+                                       ["nq", "drop"])
+            macros += [
+                macro("ProspectiveRhoCfg", f"{cp['rho']:.2f}"),
+                macro("ProspectivePermP", fmt_p(cp["p"])),
+                macro("ProspectiveNCfg", str(cp["n_configs"])),
+                macro("ProspectiveLocoCfg",
+                      f"[{cp['loco_lo']:.2f}, {cp['loco_hi']:.2f}]"),
+                macro("ProspectiveRhoCfgExclM", f"{cp2['rho']:.2f}"),
+                macro("ProspectivePermPExclM", fmt_p(cp2["p"])),
+                macro("ProspectiveNCfgExclM", str(cp2["n_configs"])),
+                macro("ProspectiveLocoCfgExclM",
+                      f"[{cp2['loco_lo']:.2f}, {cp2['loco_hi']:.2f}]")]
     if not wrote_any:
         macros += [macro("ProspectiveRho", PEND), macro("ProspectiveLoco", PEND),
                    macro("ProspectiveN", PEND), macro("ProspectiveRhoExclM", PEND)]
@@ -225,13 +258,25 @@ def write_prospective(ts, runs, macros):
     (PAPER_TABLES / "prospective.tex").write_text("\n".join(lines) + "\n")
     # final-sharpness <-> final-score association macros (Fig 3b text)
     fs = final_sharp(ts).merge(done, on=keys)
-    st = spearman_loco(fs.dropna(subset=["final_sharp", "final_frac"]),
-                       "final_sharp", "final_frac", ["nq", "mq", "drop"])
+    fsd = fs.dropna(subset=["final_sharp", "final_frac"])
+    st = spearman_loco(fsd, "final_sharp", "final_frac", ["nq", "mq", "drop"])
     macros += [macro("SharpRho", f"{st['rho']:.2f}" if pd.notna(st["rho"]) else PEND),
                macro("SharpRhoN", str(st["n"])),
                macro("SharpLoco",
                      f"[{st['loco_lo']:.2f}, {st['loco_hi']:.2f}]"
                      if pd.notna(st["loco_lo"]) else PEND)]
+    # config-level final-sharpness <-> score (honest unit, with permutation p)
+    cfs = spearman_config_perm(fsd, "final_sharp", "final_frac",
+                               ["nq", "mq", "drop"])
+    cfs2 = spearman_config_perm(fsd[fsd["mq"] != 1], "final_sharp",
+                                "final_frac", ["nq", "drop"])
+    macros += [
+        macro("SharpRhoCfg", f"{cfs['rho']:.2f}" if pd.notna(cfs["rho"]) else PEND),
+        macro("SharpPermP", fmt_p(cfs["p"])),
+        macro("SharpNCfg", str(cfs["n_configs"])),
+        macro("SharpRhoCfgExclM",
+              f"{cfs2['rho']:.2f}" if pd.notna(cfs2["rho"]) else PEND),
+        macro("SharpPermPExclM", fmt_p(cfs2["p"]))]
     print(f"  prospective.tex: merged probe rows={len(merged)}")
 
 
@@ -302,11 +347,57 @@ def write_replication(runs):
     print("  replication.tex written")
 
 
+# ----------------------------------------------------------------- minq nums
+def write_minq_numbers(ts, macros):
+    """|Qbar| amplitude vs normalized sharpness for the M=1 collapse vs healthy
+    configs (pen, last window) -- makes the 'amplitude not geometry' claim
+    quantitative (it is otherwise figure-only)."""
+    w = ts[(ts["env"] == "pen-binary-v0") & (ts["step"] > LAST_WINDOW)
+           & ts["sharp_s005"].notna()]
+    keys = ["nq", "mq", "drop", "tps", "seed"]
+    g = w.groupby(keys).agg(q=("q_abs_mean_diag", "median"),
+                            sh=("sharp_s005", "median")).reset_index()
+    m1 = g[(g["nq"] == 2) & (g["mq"] == 1) & (g["drop"] == 0.0) & (g["tps"] == 0)]
+    healthy = g[(g["mq"] == 2) & (g["tps"] == 0) & (g["drop"] == 0.0)]
+    med = lambda s: s.median() if len(s) else np.nan
+    q1, qh, s1, sh = med(m1["q"]), med(healthy["q"]), med(m1["sh"]), med(healthy["sh"])
+    qr = q1 / qh if pd.notna(q1) and pd.notna(qh) and qh else np.nan
+    sr = s1 / sh if pd.notna(s1) and pd.notna(sh) and sh else np.nan
+    # Plain numbers (no math delimiters) so they compose inside or outside
+    # math mode; the prose adds \times / \% at the use site.
+    macros += [
+        macro("MOneQabs", f"{q1:.0f}" if pd.notna(q1) else PEND),
+        macro("HealthyQabs", f"{qh:.0f}" if pd.notna(qh) else PEND),
+        macro("MOneQabsRatio", f"{qr:.0f}" if pd.notna(qr) else PEND),
+        macro("MOneSharpRatio", f"{sr:.1f}" if pd.notna(sr) else PEND)]
+    print(f"  minq numbers: |Q| M1={q1:.1f} vs healthy={qh:.1f} ({qr:.0f}x); "
+          f"sharpN M1={s1:.2e} vs healthy={sh:.2e} ({sr:.2f}x)")
+    # TPS manipulation check: how much did the smoothing knob actually move the
+    # mediator at pen N=2 (sigma 0 -> 0.3, last window)? This is what makes the
+    # TPS null 'inconclusive' (weak manipulation) rather than a refutation.
+    t2 = w[(w["nq"] == 2) & (w["mq"] == 2) & (w["drop"] == 0.0)]
+    rough = lambda s: t2[t2["tps"] == s]["roughness"].median()
+    r0, r3 = rough(0.0), rough(0.3)
+    red = (1 - r3 / r0) * 100 if pd.notna(r0) and pd.notna(r3) and r0 else np.nan
+    macros.append(macro("TpsRoughRedPenNTwo",
+                        f"{red:.0f}" if pd.notna(red) else PEND))
+    print(f"  tps manip: pen N=2 roughness {r0:.4f}->{r3:.4f} "
+          f"({red:.0f}% reduction at sigma=0.3)")
+
+
 def main():
     PAPER_TABLES.mkdir(parents=True, exist_ok=True)
     runs = pd.read_csv(TIDY / "runs.csv")
     ts = pd.read_csv(TIDY / "timeseries.csv")
     prog = json.loads((TIDY / "progress.json").read_text())
+
+    # Era hardening: every claim-bearing washu stat filters era=='washu', but
+    # April rows with colliding keys still sit in runs.csv past a mean-agg
+    # pivot_table. Assert the washu slice has unique config keys so a stray
+    # duplicate (or an April row mislabeled) can never silently average in.
+    wk = runs[runs["era"] == "washu"][["env", "nq", "mq", "drop", "tps", "seed"]]
+    assert not wk.duplicated().any(), \
+        f"washu runs.csv has duplicate config keys: {wk[wk.duplicated()].to_dict('records')}"
 
     macros = ["% AUTO-GENERATED by analysis/make_tables.py -- inline numbers\n",
               "\\newcommand{\\pendingnum}{\\textbf{\\textcolor{red}{[pending]}}}\n",
@@ -320,6 +411,7 @@ def main():
     write_signtests(runs, macros)
     write_prospective(ts, runs, macros)
     write_tps(runs, macros)
+    write_minq_numbers(ts, macros)
     write_replication(runs)
     (PAPER_TABLES / "numbers.tex").write_text("".join(macros))
     print(f"  numbers.tex: {len(macros)} macros")

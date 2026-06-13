@@ -266,3 +266,40 @@ def mannwhitney(a, b):
     if len(a) < 2 or len(b) < 2:
         return np.nan
     return stats.mannwhitneyu(a, b, alternative="two-sided").pvalue
+
+
+def spearman_config_perm(df, xcol, ycol, config_cols, n_perm=20000, seed=0):
+    """Config-level Spearman with a permutation null + leave-one-CONFIG-out.
+
+    The pre-registered pooled Spearman (spearman_loco) treats each seed-run as
+    an independent observation; with 3-5 seeds per config that PSEUDOREPLICATES
+    (an n of 38 seed-rows is really ~10 configs) and its analytic p is
+    anticonservative. This is the honest unit of analysis: collapse to one
+    (median x, median y) point per config, rank-correlate the configs, and get
+    the p from a permutation null (shuffle the config-level y). Also returns the
+    leave-one-config-out rho range over the config-level points (a real
+    fragility check, unlike LOCO over seed-rows which barely moves).
+    """
+    d = df.dropna(subset=[xcol, ycol])
+    g = (d.groupby(list(config_cols))[[xcol, ycol]].median().reset_index())
+    n = len(g)
+    if n < 4:
+        return dict(rho=np.nan, p=np.nan, n_configs=n,
+                    loco_lo=np.nan, loco_hi=np.nan)
+    x, y = g[xcol].to_numpy(), g[ycol].to_numpy()
+    rho = stats.spearmanr(x, y)[0]
+    rng = np.random.RandomState(seed)
+    ge = 0
+    for _ in range(n_perm):
+        r = stats.spearmanr(x, rng.permutation(y))[0]
+        if abs(r) >= abs(rho) - 1e-12:
+            ge += 1
+    p = (ge + 1) / (n_perm + 1)
+    locos = []
+    for i in range(n):
+        m = np.ones(n, bool); m[i] = False
+        if np.unique(x[m]).size > 2:
+            locos.append(stats.spearmanr(x[m], y[m])[0])
+    return dict(rho=rho, p=p, n_configs=n,
+                loco_lo=min(locos) if locos else np.nan,
+                loco_hi=max(locos) if locos else np.nan)
