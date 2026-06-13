@@ -1,0 +1,15 @@
+# On-policy actor-side sharpness probe fleet — 2026-06-14
+# Tests the paper's Limitation (i): measure sharpness of mean-Q at (s, pi(s))
+# (the actor's own actions) alongside the existing offline (s, a_dataset) probe.
+# Each run logs BOTH, so on-policy vs offline sharpness is a within-run paired
+# comparison against the same final score; configs span the score range.
+# Format: env,seed,nqs,minqs,dropout,maxsteps   (results -> results_op/)
+pen-binary-v0,0,2,2,0,1000000
+pen-binary-v0,0,4,2,0,1000000
+pen-binary-v0,0,6,2,0,1000000
+pen-binary-v0,0,10,2,0,1000000
+pen-binary-v0,0,2,2,0.01,1000000
+pen-binary-v0,0,4,2,0.01,1000000
+pen-binary-v0,0,6,2,0.01,1000000
+pen-binary-v0,0,10,2,0.01,1000000
+pen-binary-v0,0,2,1,0,1000000
