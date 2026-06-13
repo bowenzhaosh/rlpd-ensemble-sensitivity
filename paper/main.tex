@@ -46,7 +46,7 @@
 \newcommand{\Sbar}{\bar{Q}}
 \newcommand{\nsharp}[1][\sigma]{\tilde{S}_{#1}}
 
-\title{Beyond Pessimism: What Critic Ensembles\\Actually Regularize in Offline-to-Online RL}
+\title{Beyond Pessimism and Diversity: What Critic Ensembles\\Regularize in Offline-to-Online RL}
 
 % NOTE (submission): author block shown assumes a single-blind workshop. If
 % the target CFP is double-blind, replace this block with \author{Anonymous}.
@@ -82,9 +82,9 @@ sharpness $\nsharp$: the variance of $\Sbar(s,a{+}\epsilon)$ under small action
 perturbations, normalized by $|\Sbar|^2$. Across a multi-seed grid on sparse
 Adroit manipulation (pen, door; $N{\in}\{2,4,6,10\}$, dropout
 $p{\in}\{0,0.01\}$, with min-free $M{=}1$ ablations),
-\prov{dropout reduces $\nsharp$ and improves score only at small $N$ (pen
-interaction Mann--Whitney $p{=}\DropInteractionP$), reconciling DroQ's gains
-with RLPD's null at $N{=}10$ as one saturation curve}, and \prov{the min-free
+\prov{dropout reduces $\nsharp$ and improves score only at small $N$, with the
+benefit decaying monotonically in $N$ (a saturation curve), reconciling DroQ's
+gains with RLPD's null at $N{=}10$}, and \prov{the min-free
 failure is an amplitude event --- $|\Sbar|$ inflates by ${\sim}\MOneQabsRatio\times$
 with no rise in normalized sharpness --- dissociating pessimism from geometry}.
 A pre-registered TD3-style target-policy-smoothing arm (an action-space knob
@@ -137,6 +137,15 @@ target smoothing are then three interchangeable routes to the same resource,
 which immediately predicts saturation: once $\Sbar$ is smooth, adding another
 smoother is redundant.
 
+That action-space geometry of the critic governs the actor is not itself a new
+idea: it underlies recent critic-smoothing methods
+\citep{lee2026pave,jain2025savo} and smoothness-regularized offline-to-online
+RL \citep{wen2024ro2o}. Our contribution is not the mechanism but its use as a
+\emph{diagnostic}: we ask whether the RLPD ensemble's specific,
+otherwise-unexplained benefit \emph{is} this smoothing, and we
+\emph{dissociate} it from the pessimism and head-diversity accounts the
+ensemble literature actually invokes --- a question those works do not pose.
+
 Concretely, we measure \emph{normalized sharpness} $\nsharp$: the variance of
 $\Sbar(s, a{+}\epsilon)$ under small Gaussian action perturbations, normalized
 by squared mean $|\Sbar|$ so that value rescaling cannot masquerade as
@@ -147,13 +156,13 @@ claim-bearing configuration:
 
 \begin{enumerate}\itemsep1pt
   \item \textbf{Interaction.} \prov{Dropout improves final score at small $N$
-  and is inert at large $N$} (Fig.~\ref{fig:headline}); on pen the per-seed
-  benefit is cleanly separated between $N{=}2$ and $N{=}10$
-  (\prov{interaction Mann--Whitney $p{=}\DropInteractionP$}) and
-  \prov{the same interaction appears in $\nsharp$} (Fig.~\ref{fig:sharp}a). The
-  effect is directionally consistent but not individually significant on door
-  ($n{=}3$). This reconciles DroQ's gains with RLPD's null result as one
-  saturation curve.
+  and is inert at large $N$, decaying monotonically in $N$}
+  (Fig.~\ref{fig:headline}; pen $\Delta{=}\PenNTwoDelta\!\to\!\PenNTenDelta$
+  across $N{=}2{\to}10$), and \prov{the same pattern appears in $\nsharp$}
+  (Fig.~\ref{fig:sharp}a). On pen the $N{=}2$ vs $N{=}10$ deltas are fully
+  separated (a post-hoc descriptive contrast); door is directionally
+  consistent but not significant ($n{=}3$). This reconciles DroQ's gains with
+  RLPD's null result as one saturation curve.
   \item \textbf{Dissociation from pessimism and diversity.} \prov{The min-free
   ($M{=}1$) failure is an amplitude event, not a geometry event: $|\Sbar|$
   inflates by ${\sim}\MOneQabsRatio\times$ on the probe set while normalized
@@ -178,10 +187,11 @@ claim-bearing configuration:
   signal rather than a turnkey selection criterion (\S\ref{sec:prospective}).
 \end{enumerate}
 
-We position this as an analysis paper: no new algorithm, but a falsifiable
-account of what the most copied ensemble recipe in offline-to-online RL is
-actually buying, two interventions that separate it from its confounds, and a
-cheap predictive signal practitioners can log for free.
+We position this as an analysis paper: no new algorithm, but a pre-registered,
+falsifiable attempt to isolate which property of the most-copied ensemble
+recipe in offline-to-online RL tracks performance --- dissociating smoothness
+from pessimism and diversity --- with the interventions, controls, and honest
+limits of that account.
 
 \section{Preliminaries and the sharpness metric}
 \label{sec:metric}
@@ -301,15 +311,19 @@ Table~\ref{tab:signtests} gives the pre-registered tests. Three patterns.
 the formal tests are the config-level dropout contrasts). \textbf{(ii)}
 \prov{Dropout at $N{=}2$ closes most of that gap} (pen: median
 $\Delta{=}\DropDeltaPenNTwo$). \textbf{(iii)} \prov{Dropout at $N{=}10$ is
-inert} (pen: $\Delta{=}\DropDeltaPenNTen$). The benefit is concentrated at
-small $N$: \prov{on pen the per-seed $N{=}2$ and $N{=}10$ dropout deltas are
-fully separated (interaction Mann--Whitney $p{=}\DropInteractionP$)}; on door
-the same direction holds but is not significant at $n{=}3$
-($p{=}\DropInteractionPDoor$). The \emph{pooled} dropout sign tests
-(Table~\ref{tab:signtests}) are null by design --- dropout helps only at
-$N{=}2$, so pooling it with the inert larger-$N$ cells washes the main effect
-out; our claim is the $N$-interaction, not a dropout main effect. This is the
-DroQ/RLPD discrepancy retested inside one controlled grid.
+inert} (pen: $\Delta{=}\DropDeltaPenNTen$). The benefit \prov{decays
+monotonically with $N$ --- the pen dropout $\Delta$ is
+$\PenNTwoDelta, \PenNFourDelta, \PenNSixDelta, \PenNTenDelta$ at
+$N{=}2,4,6,10$} (Table~\ref{tab:headline}), the saturation curve a
+single-resource account predicts. \prov{The $N{=}2$ and $N{=}10$ per-seed
+deltas are fully separated on pen} (a post-hoc descriptive contrast, not a
+pre-registered test; Mann--Whitney $p{=}\DropInteractionP$ is the $n{=}5$
+floor; door shows the same direction at $n{=}3$). The \emph{pre-registered,
+pooled} dropout sign tests (Table~\ref{tab:signtests}) are null by design ---
+dropout helps only at small $N$, so pooling with the inert larger-$N$ cells
+washes the main effect out; our claim is the $N$-interaction (the dose curve),
+not a dropout main effect. This is the DroQ/RLPD discrepancy retested inside
+one controlled grid.
 
 \subsection{Sharpness tracks score; diversity does not}
 \label{sec:sharp}
@@ -457,10 +471,21 @@ $N{=}10$. Diversity-centric accounts --- MSG's independent targets
 treat head disagreement as the explanatory variable; our grid separates
 disagreement from the smoothness of the mean by construction and
 \prov{finds the designed contrasts more consistent with smoothness than with
-diversity}. Sharpness as flatness-of-minima is classical in generalization
-\citep{keskar2016large,foret2021sam}; we transport it from parameter space to
-the action space the actor differentiates. Spectral normalization bounds
-critic Lipschitz constants globally \citep{bjorck2021spectral}; our
+diversity} (EDAC's diversification in fact lowers the action-gradient norm of
+the mean critic --- our $S_\sigma$ --- so on our reading it already acts as a
+smoother wearing a diversity label). Sharpness as flatness-of-minima is
+classical in generalization \citep{keskar2016large,foret2021sam}; we transport
+it from parameter space to the action space the actor differentiates. Closest
+to us, a recent line makes the critic's action-space geometry the operative
+quantity for the policy: \citet{lee2026pave} stabilize the $Q$-gradient field
+with a critic regularizer and supporting theory, \citet{jain2025savo} show
+multimodal $Q$-landscapes trap deterministic-policy-gradient actors in
+dexterous manipulation, and \citet{wen2024ro2o} pair a $Q$-ensemble with
+explicit smoothness for robust offline-to-online RL. We share their premise but
+not their aim: we add no objective and instead use sharpness of the ensemble
+\emph{mean} to diagnose why the existing RLPD ensemble helps and to separate
+that smoothing from the pessimism and diversity axes. Spectral normalization
+bounds critic Lipschitz constants globally \citep{bjorck2021spectral}; our
 preliminary single-seed spectral-norm probes (App.~\ref{app:spectral}) were
 confounded with LayerNorm and are superseded here by target-policy smoothing
 \citep{fujimoto2018td3} as the controlled smoothness intervention.
@@ -484,9 +509,9 @@ $\nsharp$, nor interact with exploration.
 ensemble not as a pessimism device and not as a diversity device, but as a
 \emph{smoother} of the one function the actor touches, $\Sbar$.
 \prov{This reading unifies dropout's small-$N$ gains and large-$N$ inertness as
-one saturation curve (interaction $p{=}\DropInteractionP$ on pen) and survives
-a normalization that removes the $Q$-scale confound, cleanly separating the
-$M{=}1$ amplitude collapse from geometry}. Two caveats keep this a hypothesis
+one monotone saturation curve and survives a normalization that removes the
+$Q$-scale confound, cleanly separating the $M{=}1$ amplitude collapse from
+geometry}. Two caveats keep this a hypothesis
 rather than a settled mechanism: the cross-config sharpness--score association
 is weak once seeds are not double-counted, and our ensemble-free smoothing
 intervention (TPS) was too weak a manipulation to adjudicate
