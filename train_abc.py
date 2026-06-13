@@ -24,7 +24,9 @@ except Exception:
     pass
 from rlpd.evaluation import evaluate
 from rlpd.wrappers import wrap_gym
-from diagnostic import setup_diag_buffer, compute_roughness_multi
+from diagnostic import (setup_diag_buffer, compute_roughness_multi,
+                        compute_roughness_onpolicy)
+from collections import deque
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string("project_name", "rlpd_abc", "wandb project.")
@@ -48,6 +50,10 @@ flags.DEFINE_integer("critic_reset_step", 0,
                      "C: reset critic at this step. 0 = disabled.")
 flags.DEFINE_integer("actor_delay", 1,
                      "Update actor every N env steps. 1 = every step.")
+flags.DEFINE_boolean("onpolicy_probe", False,
+                     "Also log roughness of mean-Q at (s, pi(s)) on on-policy "
+                     "states (actor-side sharpness). Read-only; default off "
+                     "leaves the run bit-identical.")
 config_flags.DEFINE_config_file(
     "config", "configs/sac_config.py",
     "Config.", lock_config=False)
@@ -149,6 +155,9 @@ def main(_):
 
     # Fixed (s, a) buffer for roughness probe (computed every 50k steps).
     diag_buf = setup_diag_buffer(ds, env)
+    # Ring of recent on-policy states for the actor-side probe (read-only;
+    # avoids replay_buffer.sample, which would advance the training RNG).
+    recent_states = deque(maxlen=2000)
 
     log_rows = []
     log_path = os.path.join(log_dir, "online_log.csv")
@@ -167,6 +176,9 @@ def main(_):
             action = env.action_space.sample()
         else:
             action, agent = agent.sample_actions(observation)
+
+        if FLAGS.onpolicy_probe:
+            recent_states.append(np.asarray(observation, dtype=np.float32))
 
         next_observation, reward, done, info = env.step(action)
         mask = 1.0 if (
@@ -253,6 +265,8 @@ def main(_):
             rough_extra = {"roughness_s001": "",
                            "roughness_s01": "",
                            "q_abs_mean_diag": ""}
+            op_extra = {"roughness_onpolicy": "",
+                        "q_abs_mean_diag_onpolicy": ""}
             if i % 50000 == 0:
                 try:
                     rough = compute_roughness_multi(agent, diag_buf)
@@ -263,6 +277,21 @@ def main(_):
                 except Exception as e:
                     print("[ROUGHNESS {:>7}] failed: {}".format(i, e),
                           flush=True)
+                # Actor-side probe: roughness of mean-Q at (s, pi(s)) on
+                # on-policy states. Skipped at step 0 (policy untrained, ring
+                # near-empty); read-only, never touches training RNG.
+                if FLAGS.onpolicy_probe and len(recent_states) >= 256:
+                    try:
+                        op_states = np.stack(list(recent_states))[-1000:]
+                        op = compute_roughness_onpolicy(agent, op_states)
+                        op_extra["roughness_onpolicy"] = op["roughness_onpolicy"]
+                        op_extra["q_abs_mean_diag_onpolicy"] = \
+                            op["q_abs_mean_diag_onpolicy"]
+                        wandb.log({"diag/roughness_onpolicy":
+                                   op_extra["roughness_onpolicy"]}, step=i)
+                    except Exception as e:
+                        print("[ONPOLICY {:>7}] failed: {}".format(i, e),
+                              flush=True)
 
             if (i % (FLAGS.eval_interval * 4) == 0
                     or i < FLAGS.eval_interval * 3):
@@ -290,6 +319,10 @@ def main(_):
                 "roughness_s01": rough_extra["roughness_s01"],
                 "q_abs_mean_diag": rough_extra["q_abs_mean_diag"],
             }
+            if FLAGS.onpolicy_probe:
+                row["roughness_onpolicy"] = op_extra["roughness_onpolicy"]
+                row["q_abs_mean_diag_onpolicy"] = \
+                    op_extra["q_abs_mean_diag_onpolicy"]
             log_rows.append(row)
 
             with open(log_path, "w", newline="") as f:

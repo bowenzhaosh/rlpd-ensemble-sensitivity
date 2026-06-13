@@ -155,6 +155,31 @@ def compute_roughness_multi(agent, diag_buf):
     return out
 
 
+def compute_roughness_onpolicy(agent, obs):
+    """On-policy actor-side sharpness (addresses the offline-probe limitation).
+
+    The offline probe (compute_roughness_multi) evaluates roughness of the
+    ensemble-mean Q at dataset pairs (s, a_expert). This evaluates it at
+    (s, pi(s)) -- the action the actor's gradient actually ascends -- on
+    ON-POLICY states s (recent states the agent visited). pi(s) is the
+    deterministic policy mode (TanhNormal.mode(), already in (-1, 1)).
+
+    Probe only: deterministic forward passes, fresh PRNG keys, no replay-buffer
+    sampling -> consumes no training RNG, so adding it leaves the trajectory
+    bit-identical to the no-probe run.
+    """
+    obs = jnp.asarray(obs, dtype=jnp.float32)
+    dist = agent.actor.apply_fn({"params": agent.actor.params}, obs)
+    act_pi = jnp.asarray(dist.mode(), dtype=jnp.float32)  # [n, act_dim]
+    out = {}
+    out["roughness_onpolicy"] = round(
+        _compute_roughness(agent, obs, act_pi, sigma=0.05, seed=42), 6)
+    qs = _get_qs(agent, obs, act_pi)  # [num_qs, n]
+    out["q_abs_mean_diag_onpolicy"] = round(
+        float(np.mean(np.abs(qs.mean(axis=0)))), 6)
+    return out
+
+
 def run_diagnostic(agent, diag_buf, step, diag_path):
     obs = diag_buf["obs"]
     act_ex = diag_buf["act_expert"]
