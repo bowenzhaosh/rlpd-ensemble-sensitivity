@@ -107,6 +107,10 @@ def write_headline(runs, macros):
                 macros.append(macro(base + "NoDrop", fmt_band(a)))
                 macros.append(macro(base + "Drop", fmt_band(b)))
                 macros.append(macro(base + "Delta", delta))
+            # pen mid-N dropout deltas, for the monotone-saturation dose curve
+            if env == "pen-binary-v0" and nq in (4, 6):
+                macros.append(macro({4: "PenNFour", 6: "PenNSix"}[nq] + "Delta",
+                                    delta))
         # pen M=1 ablation arms (both designed: p in {0, 0.01})
         if env == "pen-binary-v0":
             g1 = r[(r["env"] == env) & (r["nq"] == 2) & (r["mq"] == 1)]
