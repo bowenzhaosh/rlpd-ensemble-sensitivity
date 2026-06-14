@@ -84,7 +84,8 @@ Adroit manipulation (pen, door; $N{\in}\{2,4,6,10\}$, dropout
 $p{\in}\{0,0.01\}$, with min-free $M{=}1$ ablations),
 \prov{dropout reduces $\nsharp$ and improves score only at small $N$, with the
 benefit decaying monotonically in $N$ (a saturation curve), reconciling DroQ's
-gains with RLPD's null at $N{=}10$}, and \prov{the min-free
+small-ensemble gains with the absence of a dropout benefit at large $N$}, and
+\prov{the min-free
 failure is an amplitude event --- $|\Sbar|$ inflates by ${\sim}\MOneQabsRatio\times$
 with no rise in normalized sharpness --- dissociating pessimism from geometry}.
 A pre-registered TD3-style target-policy-smoothing arm (an action-space knob
@@ -123,9 +124,10 @@ diverse~\citep{ghasemipour2022msg,an2021edac,lee2023spqr}. DroQ
 The consistency check fails in both directions: dropout at $N{=}2$ ---
 implicit averaging inside just two heads --- \prov{recovers most of the
 large-ensemble performance}, while the same mechanism at $N{=}10$ adds the
-same kind of diversity and \prov{changes nothing} (RLPD's own dropout
-ablation, which our pre-registered grid retests multi-seed). Diversity
-rises; performance does not follow.
+same kind of diversity and \prov{changes nothing} (RLPD found dropout an
+inferior \emph{substitute} for ensembling on sparse Adroit; that it is also
+inert when \emph{added on top} of a large ensemble is what our pre-registered
+multi-seed grid establishes). Diversity rises; performance does not follow.
 
 We argue the property that does follow performance is geometric: the
 \emph{smoothness in action space of the ensemble-mean critic} $\Sbar$. The
@@ -133,7 +135,7 @@ actor never sees individual heads; its update ascends
 $\nabla_a \Sbar(s,\cdot)$. If $\Sbar$ is locally sharp --- high curvature,
 spurious local peaks --- actor gradients chase artifacts; if $\Sbar$ is
 smooth, they climb signal. Ensemble averaging, dropout averaging, and explicit
-target smoothing are then three interchangeable routes to the same resource,
+target smoothing are then three candidate routes to the same resource,
 which immediately predicts saturation: once $\Sbar$ is smooth, adding another
 smoother is redundant.
 
@@ -162,7 +164,7 @@ claim-bearing configuration:
   (Fig.~\ref{fig:sharp}a). On pen the $N{=}2$ vs $N{=}10$ deltas are fully
   separated (a post-hoc descriptive contrast); door is directionally
   consistent but not significant ($n{=}3$). This reconciles DroQ's gains with
-  RLPD's null result as one saturation curve.
+  the absence of a large-$N$ dropout benefit as one saturation curve.
   \item \textbf{Dissociation from pessimism and diversity.} \prov{The min-free
   ($M{=}1$) failure is an amplitude event, not a geometry event: $|\Sbar|$
   inflates by ${\sim}\MOneQabsRatio\times$ on the probe set while normalized
@@ -317,8 +319,7 @@ $\PenNTwoDelta, \PenNFourDelta, \PenNSixDelta, \PenNTenDelta$ at
 $N{=}2,4,6,10$} (Table~\ref{tab:headline}), the saturation curve a
 single-resource account predicts. \prov{The $N{=}2$ and $N{=}10$ per-seed
 deltas are fully separated on pen} (a post-hoc descriptive contrast, not a
-pre-registered test; Mann--Whitney $p{=}\DropInteractionP$ is the $n{=}5$
-floor; door shows the same direction at $n{=}3$). The \emph{pre-registered,
+pre-registered test; door is directionally consistent at $n{=}3$). The \emph{pre-registered,
 pooled} dropout sign tests (Table~\ref{tab:signtests}) are null by design ---
 dropout helps only at small $N$, so pooling with the inert larger-$N$ cells
 washes the main effect out; our claim is the $N$-interaction (the dose curve),
@@ -349,12 +350,12 @@ the same saturation structure as the score plot}. The cross-config association
 (Fig.~\ref{fig:sharp}b) is real but weak once seeds are not double-counted:
 \prov{at the config level final $\nsharp$ correlates with final score with
 $\rho_s{=}\SharpRhoCfg$ (permutation $p{=}\SharpPermP$, $n{=}\SharpNCfg$
-configs), strengthening to $\rho_s{=}\SharpRhoCfgExclM$ when the divergent
-$M{=}1$ arms are excluded}; the pooled per-run figure $\rho_s{=}\SharpRho$
+configs), strengthening to $\rho_s{=}\SharpRhoCfgExclM$ (perm $p{=}\SharpPermPExclM$)
+when the divergent $M{=}1$ arms are excluded}; the pooled per-run figure $\rho_s{=}\SharpRho$
 ($n{=}\SharpRhoN$ runs) is anticonservative, counting 3--5 correlated seeds
 per config as independent. The dissociation from diversity therefore leans on
 the designed contrasts, where the accounts disagree by construction:
-\prov{$N{=}2{+}$dropout (little diversity) and $N{=}10$ plain reach comparable
+\prov{$N{=}2{+}$dropout (little diversity) and $N{=}10$ plain reach near-comparable
 score despite very different head counts and mask diversity (a residual gap
 remains, Limitation~(iv)), and $N{=}10{+}$dropout adds mask diversity but
 neither smooths $\Sbar$ further nor scores higher}. The April-era measured
@@ -371,8 +372,8 @@ for healthy runs, a ${\sim}\MOneQabsRatio\times$ inflation) and the run collapse
 --- classic unchecked overestimation (Fig.~\ref{fig:minq}, App.). The point for
 our thesis is what does \emph{not} happen: \prov{the collapse is an amplitude
 event, not a geometry event --- normalized sharpness does \emph{not} rise with
-it (its $M{=}1$ median is $\MOneSharpRatio\times$ the healthy median, i.e.\
-comparable or lower), while $|\Sbar|$ leaves the healthy range by three orders
+it (its $M{=}1$ median is $\MOneSharpRatio\times$ the healthy median --- an order
+of magnitude \emph{below}, not above), while $|\Sbar|$ leaves the healthy range by three orders
 of magnitude}. Pessimism is necessary on sparse Adroit (it prevents
 divergence), but it is a different resource from smoothness: $M$ sets amplitude
 control, $N$ and dropout set geometry. This is also why the normalization in
@@ -404,8 +405,9 @@ $\sigma_{\mathrm{TPS}}{=}0$: $N{=}2$ $p{=}\TpsMWPenNTwo$, $N{=}10$
 $p{=}\TpsMWPenNTen$; Fig.~\ref{fig:tps}, Table~\ref{tab:tps}). We report this
 as \emph{inconclusive} rather than as a refutation, for a concrete reason:
 \prov{the intervention barely moved the mediator --- at the largest dose it
-reduced probe roughness by only $\sim$\TpsRoughRedPenNTwo\% at $N{=}2$, while
-also perturbing $|\Sbar|$}, so at these noise scales TPS is too weak, and not
+reduced the probe roughness (the unnormalized basis of $\nsharp$) by only
+$\sim$\TpsRoughRedPenNTwo\% at $N{=}2$, while also perturbing $|\Sbar|$}, so at
+these noise scales TPS is too weak, and not
 amplitude-clean enough, to either confirm or rule out the smoothness account. A
 stronger, amplitude-controlled action-space intervention is the cleanest
 follow-up.
@@ -464,8 +466,8 @@ Critic ensembles entered value-based RL for variance reduction
 UTD continuous control with random $M$-of-$N$ minimization; DroQ
 \citep{hiraoka2022droq} replaced most heads with dropout; RLPD
 \citep{ball2023efficient} carried the recipe to offline-to-online learning
-(cf.\ also \citep{song2023hybrid}) and reported dropout's null effect at
-$N{=}10$. Diversity-centric accounts --- MSG's independent targets
+(cf.\ also \citep{song2023hybrid}) and found dropout an inferior
+\emph{substitute} for the ensemble on sparse-reward Adroit. Diversity-centric accounts --- MSG's independent targets
 \citep{ghasemipour2022msg}, EDAC's gradient diversification
 \citep{an2021edac}, SPQR's independence regularizer \citep{lee2023spqr} ---
 treat head disagreement as the explanatory variable; our grid separates
@@ -534,7 +536,7 @@ performance there without any ensemble in sight.
 \begin{table}[h]
 \centering
 \caption{Final score (fraction of horizon in success; median (min--max; $n$))
-across the grid. Auto-generated; \pendingnum{} = awaiting fleet completion.}
+across the grid. Auto-generated.}
 \label{tab:headline}
 \small
 \input{tables/headline}
@@ -554,7 +556,10 @@ $p$-values are exact two-sided binomial sign tests.}
 \centering
 \caption{Prospective prediction: Spearman $\rho_s(\nsharp[0.05]\text{ at }t,$
 final score$)$ across pen runs, with leave-one-config-out (LOCO) range, and
-excluding the divergent $M{=}1$ arms.}
+excluding the divergent $M{=}1$ arms. The \emph{excl.\ $M{=}1$} column is
+pooled-over-seeds (anticonservative); the config-level permutation figure
+($\rho_s{=}\ProspectiveRhoCfgExclM$, $p{=}\ProspectivePermPExclM$) is quoted in
+the text.}
 \label{tab:prospective}
 \small
 \input{tables/prospective}
@@ -660,6 +665,14 @@ LayerNorm-free spectral sweep remains future work.
 
 JAX implementation on the reference RLPD codebase; single RTX 4000 Ada (20GB)
 per run, 3.5--5.7 wall-hours per 1M-step run. Probe overhead $<\!1\%$.
+\textbf{Agent hyperparameters} (SAC backbone, fixed across all runs unless it is
+the swept variable): critic and actor MLPs $(256,256,256)$ with LayerNorm in the
+critic; actor/critic/temperature learning rate $3{\times}10^{-4}$ (Adam);
+discount $0.99$; target EMA $\tau{=}0.005$; UTD ratio $20$; batch size $256$;
+offline:online sampling $50{:}50$; $5{,}000$ warmup steps; $20$ evaluation
+episodes every $5$k steps; \texttt{backup\_entropy} disabled. Swept:
+$N{\in}\{2,4,6,10\}$, $M{\in}\{1,2\}$, dropout $p{\in}\{0,0.01\}$,
+$\sigma_{\mathrm{TPS}}{\in}\{0,0.1,0.2,0.3\}$; seeds as stated per cell.
 All analysis (tidy tables, every figure and number in this paper) regenerates
 from logs with one script (\texttt{analysis/run\_all.sh}); the pre-registered
 statistical discipline is version-controlled alongside the harness. Code and
