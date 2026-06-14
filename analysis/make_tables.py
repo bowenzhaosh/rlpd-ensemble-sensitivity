@@ -171,10 +171,9 @@ def write_signtests(runs, macros):
         d10 = pairs[(pairs["env"] == env) & (pairs["nq"] == 10)]["delta"]
         pint = mannwhitney(d2, d10)
         macros.append(macro(mname, fmt_p(pint)))
-        if env == "pen-binary-v0":
-            lines.append(
-                f"$\\Delta(N{{=}}2)$ vs $\\Delta(N{{=}}10)$ (pen, interaction MW)"
-                f" & \\multicolumn{{2}}{{c}}{{separated}} & {fmt_p(pint)} \\\\")
+        # NOTE: the interaction MW is post-hoc (not pre-registered) and at the
+        # n=5 floor; it is NOT shown in this pre-registered-contrasts table.
+        # The dropout x N interaction is reported as the dose curve in the text.
     # (c) N=10 > N=2, no dropout: DESCRIPTIVE concordance only. The
     # pre-registered discipline reserves seed-level paired TESTS for dropout
     # contrasts (rule 3); this row reports counts without a p-value.
