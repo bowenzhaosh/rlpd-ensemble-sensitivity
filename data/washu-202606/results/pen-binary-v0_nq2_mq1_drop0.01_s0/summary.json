@@ -1,0 +1,14 @@
+{
+  "env": "pen-binary-v0",
+  "seed": 0,
+  "tag": "baseline",
+  "nqs": 2,
+  "ln": true,
+  "bootstrap_mask": false,
+  "independent_targets": false,
+  "critic_reset_step": 0,
+  "final_score": -4016.0000228881836,
+  "peak_score": -2479.9999237060547,
+  "peak_step": 820000,
+  "wall_hours": 4.0
+}

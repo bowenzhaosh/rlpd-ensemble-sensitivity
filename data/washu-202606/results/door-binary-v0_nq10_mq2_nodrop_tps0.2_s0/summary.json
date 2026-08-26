@@ -1,0 +1,15 @@
+{
+  "env": "door-binary-v0",
+  "seed": 0,
+  "tag": "baseline",
+  "target_smoothing_sigma": 0.2,
+  "nqs": 10,
+  "ln": true,
+  "bootstrap_mask": false,
+  "independent_targets": false,
+  "critic_reset_step": 0,
+  "final_score": -4252.9999923706055,
+  "peak_score": -4100.0,
+  "peak_step": 920000,
+  "wall_hours": 3.9
+}
