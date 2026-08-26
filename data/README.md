@@ -2,12 +2,18 @@
 
 | Era | Dir | Harness | Role in paper |
 |-----|-----|---------|---------------|
-| April 2026 (Delta A100) | `april/` | pre-roughness-probe (`95fac9d`-era), scores only | **Corroboration only.** Never headline. Single-harness-era runs; result dir names collide (no mq/drop in name) — see `april/README.md`. |
-| June 2026 (WashU RTX-4000) | `washu-202606/` | patched harness: roughness σ∈{0.01,0.05,0.1} + `q_abs_mean_diag` every 50k, all runs | **All headline numbers.** 62-run multi-seed fleet (78870) + 24-run TD3-TPS arm (78877). |
+| April 2026 (Delta A100) | `april/` | pre-probe (`95fac9d`-era), scores only, single seed | **Corroboration only** (cross-era replication check, App. D). Result-dir names collide (no `mq`/`drop` in the name), so `april/run_tracker.csv` is the only attributable source; see `april/README.md`. |
+| June 2026 (WashU RTX 4000) | `washu-202606/` | fleet harness: sharpness probe at σ ∈ {0.01, 0.05, 0.1} + `q_abs_mean_diag` every 50k steps, in every run | **All headline numbers.** 62-run multi-seed grid (Slurm job 78870, tasks 39-62 re-laned as 79201) + 24-run TD3 target-policy-smoothing arm (79210/79211). |
+| June 2026 on-policy probe | `onpolicy-202606/` | fleet harness + `--onpolicy_probe` (sharpness at the actor's own actions) | **Not claimed.** 9 pen runs, seed 0 (job 79790); `VERDICT.md` records why the result is confounded with Q-overestimation. |
 
-Sync the washu era with `analysis/collect_results.sh` (idempotent rsync; safe to re-run
-while the fleet is still going — partial data is handled downstream).
+`washu-202606/results/` holds all 86 run directories (`online_log.csv` + `summary.json` each);
+`washu-202606/smoke_rlpd_78869.txt` is the timing-gate smoke log. These logs are the
+input to `analysis/run_all.sh --local`, which regenerates every table and figure in the
+paper without cluster access. `analysis/collect_results.sh` is the idempotent rsync that
+produced them from the cluster.
 
-Raw run dirs and Slurm logs are gitignored (only curated CSVs + READMEs are tracked).
-The single source of truth for April final scores is `april/run_tracker.csv`
-(curated from Slurm logs), NOT the April result dirs.
+Raw April run dirs and Slurm logs are not tracked (see `.gitignore`).
+
+Score scale: `final_score` in `summary.json` = mean of the last 10 evaluations of
+`normalized_score` = per-episode return × 100, in [−100·H, 0] with H = 100 (pen) and
+200 (door). Fraction-of-horizon-in-success, the paper's score, = 1 + score/(100·H).

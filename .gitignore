@@ -1,5 +1,9 @@
-results/
+# run outputs on the cluster (the June fleet logs are tracked under data/washu-202606/results/)
+/results/
+/results_op/
+/logs/
 rlpd/
+upstream_rlpd/
 __pycache__/
 *.pyc
 *.egg-info/
@@ -8,11 +12,12 @@ __pycache__/
 rlpd_*.txt
 rlpd_*_err.txt
 *.zip
-upstream_rlpd/
 
-# generated analysis outputs (regenerate with analysis/run_all.sh)
-analysis/out/
-paper/figures/*.pdf
+# April-era raw run dirs + Slurm logs (corroboration only; run_tracker.csv is the tracked source)
+data/april/results/
+data/april/slurm_logs/
+
+# regenerable pipeline state
+analysis/out/fleet_queue.txt
 paper/build/
-# data/: raw run dirs + slurm logs ignored via results/ + rlpd_*.txt above;
-# curated CSVs and READMEs in data/ stay tracked.
+paper/.DS_Store

@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this code or these experiment logs, please cite the paper."
+title: "Beyond Pessimism and Diversity: What Critic Ensembles Regularize in Offline-to-Online RL"
+authors:
+  - family-names: Zhao
+    given-names: Bowen
+    affiliation: Washington University in St. Louis
+  - family-names: Peng
+    given-names: Zhuoyu
+    affiliation: Washington University in St. Louis
+year: 2026
+repository-code: "https://github.com/bowenzhaosh/rlpd-ensemble-sensitivity"
+license: MIT
+keywords:
+  - offline-to-online reinforcement learning
+  - critic ensembles
+  - RLPD
+  - pessimism
+  - ensemble diversity
+  - action-space smoothness
+  - dropout
