@@ -1,3 +1,4 @@
+# Copied from / derived from ikostrikov/rlpd (MIT, Copyright (c) 2022 Ilya Kostrikov, Philip J. Ball, Laura Smith); see LICENSE-rlpd.
 from ml_collections import config_dict
 import ml_collections
 

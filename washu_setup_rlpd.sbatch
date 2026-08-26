@@ -12,10 +12,10 @@
 # home quota.
 set -eo pipefail
 export PIP_NO_CACHE_DIR=1
-export CONDA_PKGS_DIRS=/tmp/zhao.b-conda-pkgs
+export CONDA_PKGS_DIRS=/tmp/$USER-conda-pkgs
 mkdir -p "$CONDA_PKGS_DIRS"
 
-cd "$HOME/rlpd_experiments"
+cd "$SLURM_SUBMIT_DIR"
 bash setup_cluster.sh
 
 # --- Hard verification beyond setup_cluster.sh's soft warnings ---

@@ -1,4 +1,6 @@
-# Tested on Python 3.10 + CUDA 12 + A100
+# GPU training environment (conda env `rlpd`), Python 3.10 + CUDA 12.
+# Used for the June-2026 fleet on WashU RTX 4000 Ada / A6000 nodes (and the April-era A100 runs).
+# The analysis/paper pipeline needs only analysis/requirements.txt.
 # Install order: numpy/Cython first, then mujoco-py, then JAX, then the rest.
 # See setup_cluster.sh for the exact install sequence.
 
@@ -7,6 +9,10 @@ Cython<3
 
 jax[cuda12]==0.4.30
 flax==0.8.5
+# flax pulls an unpinned orbax-checkpoint that drags in jax 0.6 and breaks the 0.4.30 CUDA plugin;
+# pin it (washu_fix_jax.sbatch repairs an env that already drifted). setuptools<81 keeps pkg_resources.
+orbax-checkpoint==0.5.23
+setuptools<81
 optax==0.2.3
 tensorflow-probability==0.23.0
 

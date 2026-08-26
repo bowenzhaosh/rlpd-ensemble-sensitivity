@@ -8,7 +8,7 @@ its `dblblindworkshop` option and `\author{Anonymous}` for review. Current build
 
 **Nothing numeric is typed by hand.** Every number, figure, and table comes from
 `analysis/make_{figures,tables}.py` over the tidy CSVs; `tables/numbers.tex` holds the
-58 inline macros. Missing fleet results would render as red `[pending]` plus a
+inline-number macros. Missing fleet results would render as red `[pending]` plus a
 provisional banner, so the draft cannot overstate what the data contains; with the
 complete 86-run fleet the banner is off.
 
@@ -24,8 +24,7 @@ complete 86-run fleet the banner is off.
   per-run figures are printed and labelled anticonservative.
 
 ## Author list (confirmed 2026-08-24)
-Bowen Zhao (corresponding, zhao.b@wustl.edu) and Zhuoyu Peng, Washington University in
-St. Louis. Submissions are double-blind, so `main.tex` carries `\author{Anonymous}`; the
+Bowen Zhao and Zhuoyu Peng, Washington University in St. Louis. Submissions are double-blind, so `main.tex` carries `\author{Anonymous}`; the
 real list goes on the submission form and the commented-out camera-ready block is
 restored on acceptance. The camera-ready NOTE in App. G is where the public repository
 URL and commit hash go.

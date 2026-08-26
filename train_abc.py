@@ -1,3 +1,4 @@
+# Copied from / derived from ikostrikov/rlpd (MIT, Copyright (c) 2022 Ilya Kostrikov, Philip J. Ball, Laura Smith); see LICENSE-rlpd.
 """train_abc.py — Test directions A (bootstrap masks), B (independent
 targets), C (plasticity reset). All on RLPD backbone."""
 import os

@@ -158,6 +158,8 @@ pip install -q "jax[cuda12]==0.4.30" || {
 echo "  Installing remaining dependencies..."
 pip install -q \
   flax==0.8.5 \
+  "orbax-checkpoint==0.5.23" \
+  "setuptools<81" \
   optax==0.2.3 \
   tensorflow-probability==0.23.0 \
   gym==0.23.1 \
@@ -255,6 +257,7 @@ fi
 echo ""
 echo "Next steps:"
 echo "  cd $REPO_DIR"
-echo "  bash submit_all.sh --dry-run"
-echo "  bash submit_all.sh"
+echo "  sbatch washu_smoke_rlpd.sbatch     # timing gate"
+echo "  sbatch washu_array.sbatch          # 62-run grid"
+echo "  sbatch washu_array_tps.sbatch      # 24-run TPS arm"
 echo "============================================"

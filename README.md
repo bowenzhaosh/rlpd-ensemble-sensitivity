@@ -28,16 +28,16 @@ Final score = fraction of the evaluation horizon spent in success (median over s
 
 What the paper draws from the 86-run fleet (62 grid runs + 24 target-policy-smoothing runs):
 
-1. **Interaction.** Dropout helps at small *N* and is inert at large *N*, decaying monotonically (pen Δ = +0.20, +0.11, +0.01, -0.01 at *N* = 2, 4, 6, 10). Normalized sharpness of the mean critic shows the same saturation. This reconciles DroQ's small-ensemble gains with RLPD's finding that dropout adds nothing at *N* = 10.
+1. **Interaction.** Dropout helps at small *N* and is inert at large *N*, decaying monotonically (pen Δ = +0.20, +0.11, +0.01, -0.01 at *N* = 2, 4, 6, 10). Normalized sharpness of the mean critic shows the same saturation. This reconciles DroQ's small-ensemble gains with RLPD's finding that dropout is an inferior substitute for the ensemble; that dropout is also inert when added on top of *N* = 10 is established by this grid.
 2. **Dissociation from pessimism.** Removing the min (*M* = 1) inflates |Q̄| on the probe set by ~1009× and collapses the run, while normalized sharpness does not rise (its *M* = 1 median is 0.1× the healthy median). Pessimism acts on amplitude; *N* and dropout act on geometry.
-3. **Intervention, pre-registered and inconclusive.** TD3-style target-policy smoothing at σ ∈ {0.1, 0.2, 0.3} did not reproduce dropout's effect (Mann-Whitney *p* = 1.000 at both *N*), and it reduced probe roughness by only ~5%, so it is reported as inconclusive rather than as a refutation.
+3. **Intervention, pre-registered and inconclusive.** TD3-style target-policy smoothing at σ ∈ {0.1, 0.2, 0.3} did not reproduce dropout's effect (Mann-Whitney *p* = 1.000 at both *N*), and at its largest dose (σ = 0.3) it reduced raw probe roughness at *N* = 2 by only ~5% while also moving |Q̄|, so it is reported as inconclusive rather than as a refutation.
 4. **Prospective signal, weak.** Sharpness at the 100k-step checkpoint is associated with final score among non-divergent pen configurations (config-level Spearman ρ = -0.74, permutation *p* = 0.045, *n* = 8 configs); pooling all configurations the association is not significant (ρ = -0.32, *p* = 0.37, *n* = 10). It is not presented as a selection rule.
 
 The pre-registered analysis discipline (median/min-max, exact sign tests with one unit per config, no seed-pairing for the TPS arm, *Q*-scale normalization, σ = 0.05 headline with a {0.01, 0.1} robustness sweep) was written down on 2026-06-11 while the fleet was 12/62 complete; the full text is the module docstring of `analysis/rlpd_common.py`.
 
 ## Reproduce the paper from the shipped logs (no cluster needed)
 
-Requires Python 3.11 with `pandas`, `scipy`, `matplotlib`, and a LaTeX installation with `latexmk`.
+Requires Python ≥ 3.10 (tested with 3.11.7) with the packages in `analysis/requirements.txt` (numpy, pandas, scipy, matplotlib), and a LaTeX installation with `latexmk`.
 
 ```bash
 git clone https://github.com/bowenzhaosh/rlpd-ensemble-sensitivity.git
@@ -49,29 +49,32 @@ RLPD_PY=python3 bash analysis/run_all.sh --local
 # -> paper/build/main.pdf
 ```
 
-`--local` skips the cluster rsync and rebuilds from `data/washu-202606/results/` (86 run directories, each with `online_log.csv` and `summary.json`). The generated tables and figures are committed, so `git diff --stat paper/tables paper/figures` after a rebuild should be empty.
+`--local` skips the cluster rsync and rebuilds from `data/washu-202606/results/` (86 run directories, each with `online_log.csv` and `summary.json`). The generated tables, figures, and tidy CSVs are committed and the pipeline is deterministic (figure PDFs carry no timestamp), so `git diff --stat paper/tables paper/figures analysis/out` after a rebuild should be empty. The on-policy probe numbers in `data/onpolicy-202606/VERDICT.md` regenerate with `python analysis/onpolicy_analysis.py`.
 
 ## Re-run the experiments
 
-The fleet ran on a Slurm cluster (WashU, one RTX 4000 Ada 20 GB per run, 3.5-5.7 wall-hours per 1M-step run). The harness is JAX on the reference RLPD codebase.
+The fleet ran on a Slurm cluster at WashU in two lanes: 38 grid + 8 TPS runs on one RTX 4000 Ada (20 GB) each, and 24 grid + 16 TPS runs on half-card A6000 shards (`XLA_PYTHON_CLIENT_MEM_FRACTION=0.30`); 2.7-7.6 wall-hours per 1M-step run (median 4.7). The harness is JAX on the reference RLPD codebase.
 
 ```bash
 # on a GPU node: conda env `rlpd`, MuJoCo 210, d4rl, mjrl, mj_envs, Adroit binary datasets
 bash setup_cluster.sh                 # or: sbatch washu_setup_rlpd.sbatch (setup + hard GPU/dataset verify)
+mkdir -p logs                         # Slurm output dir (tracked as logs/.gitkeep)
 
 sbatch washu_smoke_rlpd.sbatch        # 20k-step timing gate
 sbatch washu_array.sbatch             # 62-run grid  (manifest: washu_runs.txt)
 sbatch washu_array_tps.sbatch         # 24-run target-policy-smoothing arm (washu_runs_tps.txt)
 sbatch washu_array_op.sbatch          # optional 9-run on-policy sharpness probe (washu_runs_op.txt)
 
-bash analysis/collect_results.sh      # rsync logs back, then analysis/run_all.sh
+bash analysis/collect_results.sh      # rsync logs back (assumes an ssh alias `washu`), then analysis/run_all.sh
 ```
 
-The array scripts are idempotent (a task whose `summary.json` exists exits 0), so a whole array can be resubmitted to retry failures. Partition, account, and GPU lines at the top of each `.sbatch` are site-specific. Pinned dependency versions are in `requirements.txt`; `setup_cluster.sh` installs them in order (numpy/Cython, mujoco-py, JAX, then the rest) and clones the upstream `rlpd/` library, which is not vendored here.
+Submit every `.sbatch` from the repo root (they `cd "$SLURM_SUBMIT_DIR"`). The array scripts are idempotent (a task whose `summary.json` exists exits 0), so a whole array can be resubmitted to retry failures. Partition, account, and GPU lines at the top of each `.sbatch` are site-specific. Pinned dependency versions are in `requirements.txt`; `setup_cluster.sh` installs them in order (numpy/Cython, mujoco-py, JAX, then the rest) and clones the upstream `rlpd/` library, which is not vendored here.
 
 A single run:
 
 ```bash
+export WANDB_MODE=disabled MUJOCO_GL=egl D4RL_SUPPRESS_IMPORT_ERROR=1 XLA_PYTHON_CLIENT_PREALLOCATE=false
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/.mujoco/mujoco210/bin"   # plus the CUDA/nvidia lib dir on your site
 python train_abc.py --env_name=pen-binary-v0 --seed=0 --max_steps=1000000 \
   --config=configs/rlpd_config.py --config.num_qs=2 --config.num_min_qs=2 \
   --config.critic_dropout_rate=0.01 --config.critic_layer_norm=True \
@@ -91,10 +94,11 @@ train_abc.py             training script for the grid (+ --onpolicy_probe for th
 train_abc_tps.py         training script for the TPS arm
 diagnostic.py            sharpness/roughness probe (fixed 1000-pair probe set, sigma sweep, |Q| scale), diversity metrics
 train_diagnostic.py      April-era training with per-head diversity diagnostics (head/mask variance, rank, OOD gap)
-configs/                 ml_collections configs: rlpd_config.py (N=10, M=2, LayerNorm) on sac_config.py / td_config.py
+configs/                 ml_collections configs copied from upstream RLPD: rlpd_config.py (N=10, M=2, LayerNorm) on sac_config.py / td_config.py
 
-washu_*.sbatch           Slurm scripts used for the June-2026 fleet: setup, smoke, grid array, TPS array, on-policy array
-washu_runs*.txt          run manifests (env,seed,N,M,dropout,steps) for the three arrays
+washu_*.sbatch           Slurm scripts used for the June-2026 fleet: setup, JAX repair, smoke (grid/TPS/on-policy), grid array, TPS array, on-policy array
+washu_runs*.txt          run manifests for the three arrays (env,seed,N,M,dropout,steps; the TPS manifest adds a sigma field)
+logs/                    Slurm output dir for the array scripts (tracked as .gitkeep)
 setup_cluster.sh         one-shot environment install (conda env, MuJoCo 210, d4rl, mjrl, mj_envs, datasets)
 run.sh, submit_all.sh, experiments.txt, check_progress.sh
                          April-2026 launchers (Delta A100 era); kept for the replication appendix, superseded by washu_*
@@ -104,7 +108,8 @@ analysis/
   build_tidy.py          run dirs -> out/tidy/{runs,timeseries,prospective}.csv + progress.json
   make_figures.py        tidy CSVs -> paper/figures/fig_*.pdf
   make_tables.py         tidy CSVs -> paper/tables/*.tex (incl. numbers.tex inline macros)
-  onpolicy_analysis.py   analysis of the on-policy probe runs (data/onpolicy-202606/)
+  onpolicy_analysis.py   analysis of the on-policy probe runs (default input data/onpolicy-202606/results_op)
+  requirements.txt       pinned analysis stack (numpy/pandas/scipy/matplotlib)
   run_all.sh             the one button: [sync] -> tidy -> figures -> tables -> PDF
   collect_results.sh     rsync of run logs from the cluster
   out/tidy/              generated tidy CSVs (committed)
@@ -126,13 +131,13 @@ paper/
 Two eras of runs exist and are never mixed inside a claim (details in `data/README.md`):
 
 - **June 2026, WashU RTX 4000** (`data/washu-202606/`): all headline numbers. 62 grid runs (pen: *N* ∈ {2,4,6,10} × *p* ∈ {0, 0.01} with 5 seeds on the four headline cells and 3 elsewhere, plus *M* = 1 arms at *N* = 2; door: 8 configs × 3 seeds) and 24 TPS runs. One harness with the probe compiled in, so every run carries score and sharpness.
-- **April 2026, Delta A100** (`data/april/`): the course-report era, single seed, probe-free harness, and run directories whose names did not encode *M* or dropout. Used only for the cross-era replication check in the appendix. Raw April run dirs and Slurm logs are not tracked; `run_tracker.csv` is the curated source.
+- **April 2026, Delta A100** (`data/april/`): the course-report era, mostly single seed (five cells carry 3-5 seeds), probe-free harness, and run directories whose names did not encode *M* or dropout. Used only for the cross-era replication check in the appendix, which tabulates seed 0; every additional April seed also meets the ±0.08 criterion. Raw April run dirs and Slurm logs are not tracked; `run_tracker.csv` is the curated source. The dense-reward halfcheetah runs (Limitation ii) and the spectral-norm probes (App. F) were course-report runs whose logs are not shipped; no number in the paper comes from them.
 
 The on-policy probe (`data/onpolicy-202606/`) measured sharpness at the actor's own actions after the fleet landed. It correlated with score better than the offline probe but was judged confounded with *Q*-overestimation magnitude and single-seed; `VERDICT.md` records the analysis and why it is not claimed.
 
 ## Spectral-normalization branch
 
-The course report also tried spectral normalization of critic layers as a smoothness intervention. That line of code (`critic_spec_norm.py`, gradient-based sharpness diagnostics, a `spec_norm_coef` config knob, by Zhuoyu Peng) lives on the branch [`spectral-norm-probe`](https://github.com/bowenzhaosh/rlpd-ensemble-sensitivity/tree/spectral-norm-probe). It is not merged into `main` because it changes the run-directory naming that the analysis parser expects, and because the paper reports those probes as superseded single-seed work (App. F): they were confounded with LayerNorm, and target-policy smoothing replaced them as the controlled intervention.
+The course report also tried spectral normalization of critic layers as a smoothness intervention. That line of code (`critic_spec_norm.py`, a `spec_norm_coef` config knob, and gradient-based sharpness diagnostics), merged from Zhuoyu Peng's fork as PR #1 in May 2026, lives on the branch [`spectral-norm-probe`](https://github.com/bowenzhaosh/rlpd-ensemble-sensitivity/tree/spectral-norm-probe). Its code is not on `main` (the merge kept the fleet harness) because it changes the run-directory naming that the analysis parser expects, and because the paper reports those probes as superseded single-seed work (App. F): they were confounded with LayerNorm, and target-policy smoothing replaced them as the controlled intervention.
 
 ## Citation
 
@@ -147,4 +152,4 @@ The course report also tried spectral normalization of critic layers as a smooth
 
 ## License and acknowledgements
 
-Experiment and analysis code in this repository is released under the MIT License (see `LICENSE`). The agent builds on the reference RLPD implementation, [ikostrikov/rlpd](https://github.com/ikostrikov/rlpd) (MIT), which `setup_cluster.sh` clones into `rlpd/` at install time. Environments and datasets come from D4RL, mjrl, and mj_envs under their own licenses. Compute for the June 2026 fleet was provided by Washington University in St. Louis (Engineering IT GPU pool).
+Experiment and analysis code in this repository is released under the MIT License (see `LICENSE`). The agent, the configs, and the training scripts are copied from or derived from the reference RLPD implementation, [ikostrikov/rlpd](https://github.com/ikostrikov/rlpd) (MIT, see `LICENSE-rlpd`), which `setup_cluster.sh` also clones into `rlpd/` at install time. Environments and datasets come from D4RL, mjrl, and mj_envs under their own licenses. Compute for the June 2026 fleet was provided by Washington University in St. Louis (Engineering IT GPU pool).

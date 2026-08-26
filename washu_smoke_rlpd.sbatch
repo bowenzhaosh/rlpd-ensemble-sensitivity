@@ -11,7 +11,7 @@
 # RTX 4000 (env + dataset + JAX GPU + patched roughness probe) and
 # measures throughput to project the 1M-step wall-clock vs the 8h cap.
 set -eo pipefail
-cd "$HOME/rlpd_experiments"
+cd "$SLURM_SUBMIT_DIR"
 
 source "$HOME/miniforge3/etc/profile.d/conda.sh"
 conda activate rlpd

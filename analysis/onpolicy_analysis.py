@@ -7,10 +7,10 @@ show the dropout x N interaction, BETTER than the fixed offline (s, a_dataset)
 probe? Each run logs both, so it is a within-run paired comparison; configs are
 the unit (single seed -> n=9 / n=8 excl-M1), permutation-tested.
 
-Usage: onpolicy_analysis.py [results_op_dir]
+Usage: python analysis/onpolicy_analysis.py [results_op_dir]
+(default: data/onpolicy-202606/results_op, the shipped 9-run probe)
 """
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -19,9 +19,11 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
-RES = Path(sys.argv[1] if len(sys.argv) > 1
-           else os.path.expanduser("~/Downloads/rlpd_experiments/results_op"))
+RES = (Path(sys.argv[1]) if len(sys.argv) > 1
+       else Path(__file__).resolve().parent.parent / "data" / "onpolicy-202606"
+       / "results_op")
 H = {"pen-binary-v0": 100, "door-binary-v0": 200}
+WIDE = {"rho": np.nan, "p": np.nan}
 RE = re.compile(r"(?P<env>[a-z-]+-v\d+)_nq(?P<nq>\d+)_mq(?P<mq>\d+)"
                 r"_(?P<drop>nodrop|drop[0-9.]+)_s(?P<seed>\d+)")
 
@@ -49,8 +51,16 @@ def perm_p(x, y, B=20000, seed=0):
     return r, (c + 1) / (B + 1)
 
 
+def loco_range(x, y, cfgs):
+    """Leave-one-config-out range of Spearman rho."""
+    x, y, cfgs = np.asarray(x), np.asarray(y), np.asarray(cfgs)
+    rs = [spearmanr(np.delete(x, i), np.delete(y, i))[0] for i in range(len(x))]
+    return min(rs), max(rs)
+
+
 def main():
     rows = []
+    wide_rows = []
     for d in sorted(RES.glob("*")):
         sj, log = d / "summary.json", d / "online_log.csv"
         meta = parse(d.name)
@@ -64,6 +74,10 @@ def main():
         fw = t[t["step"] > 800000]
         if fw["roughness"].notna().sum() == 0:
             continue
+        w6 = t[t["step"] > 600000]
+        wide_rows.append(dict(**meta, final_frac=frac(s["final_score"], meta["env"]),
+                              sharp_op=(w6["roughness_onpolicy"]
+                                        / w6["q_abs_mean_diag_onpolicy"] ** 2).median()))
         rows.append(dict(
             **meta, final_frac=frac(s["final_score"], meta["env"]),
             sharp_off=(fw["roughness"] / fw["q_abs_mean_diag"] ** 2).median(),
@@ -74,6 +88,11 @@ def main():
             q_off=fw["q_abs_mean_diag"].median(),
             q_op=fw["q_abs_mean_diag_onpolicy"].median()))
     df = pd.DataFrame(rows)
+    wd = pd.DataFrame(wide_rows)
+    if len(wd):
+        wd = wd[(wd["mq"] == 2) & (wd["sharp_op"] > 0)]
+        WIDE.update(dict(zip(("rho", "p"), perm_p(np.log(wd["sharp_op"]), wd["final_frac"])))
+                    if len(wd) >= 4 else dict(rho=np.nan, p=np.nan))
     print(f"=== results_op: {len(df)}/9 runs with final-window data ===")
     if len(df) < 4:
         print("  too few runs yet; rerun when more land.")
@@ -92,8 +111,15 @@ def main():
             d = d[d[col] > 0]
             if len(d) >= 4:
                 r, p = perm_p(np.log(d[col]), d["final_frac"])
-                line += f"{col} rho={r:+.2f} p={p:.3f}   "
+                lo, hi = loco_range(np.log(d[col]), d["final_frac"], d.index)
+                line += f"{col} rho={r:+.2f} p={p:.3f} LOCO[{lo:+.2f},{hi:+.2f}]   "
         print(line)
+    sub = df[df["mq"] == 2].dropna(subset=["rough_op", "final_frac"])
+    r, p = perm_p(np.log(sub["rough_op"]), sub["final_frac"])
+    print(f"  raw on-policy roughness (unnormalized) vs score, excl M=1: "
+          f"rho={r:+.2f} p={p:.3f}")
+    print(f"  wider final window (step > 600k), on-policy sharpness excl M=1: "
+          f"rho={WIDE['rho']:+.2f} p={WIDE['p']:.3f}")
 
     print("\n=== INTERACTION (descriptive, single seed): dropout dlog-sharp "
           "@N=2 vs @N=10 — more negative @N2 = smooths more at small N ===")

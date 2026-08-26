@@ -1,3 +1,5 @@
+# Frozen April 2026 snapshot (course-report era; see README.md, run_tracker.csv is the source of truth)
+
 # All Runs Needed
 
 ## pen-binary-v0 (1M steps)

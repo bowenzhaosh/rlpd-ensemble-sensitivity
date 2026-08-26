@@ -1,0 +1,6 @@
+# Analysis + paper pipeline (analysis/run_all.sh --local). Versions that regenerate the
+# committed tables byte-for-byte; Python >= 3.10 (tested with 3.11.7).
+numpy==1.26.4
+pandas==2.3.3
+scipy==1.12.0
+matplotlib==3.10.8

@@ -19,7 +19,7 @@ export PIP_NO_CACHE_DIR=1
 pip install -q "jax[cuda12]==0.4.30" "orbax-checkpoint==0.5.23" "setuptools<81"
 pip list 2>/dev/null | grep -iE "^(jax|jaxlib|jax-cuda|orbax|chex|numpy|setuptools)"
 
-cd "$HOME/rlpd_experiments"
+cd "$SLURM_SUBMIT_DIR"
 export D4RL_SUPPRESS_IMPORT_ERROR=1
 export MUJOCO_GL=egl
 export XLA_PYTHON_CLIENT_PREALLOCATE=false

@@ -11,7 +11,7 @@
 # array. Verifies the subclass trains, the tps run-name tag, probe
 # columns, and that timing still fits the 8h cap.
 set -eo pipefail
-cd "$HOME/rlpd_experiments"
+cd "$SLURM_SUBMIT_DIR"
 
 source "$HOME/miniforge3/etc/profile.d/conda.sh"
 conda activate rlpd
