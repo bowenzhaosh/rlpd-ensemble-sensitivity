@@ -1,3 +1,8 @@
+Third-party notices for this repository.
+
+paper/neurips_2026.sty is the NeurIPS 2026 style file distributed by the
+conference and is not covered by the repository's MIT license.
+
 The following files are copied from or derived from the reference RLPD
 implementation, https://github.com/ikostrikov/rlpd, and remain under its license
 reproduced below: configs/td_config.py, configs/sac_config.py,
