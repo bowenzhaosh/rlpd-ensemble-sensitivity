@@ -1,3 +1,4 @@
+# Copied from / derived from ikostrikov/rlpd (MIT, Copyright (c) 2022 Ilya Kostrikov, Philip J. Ball, Laura Smith); see LICENSE-rlpd.
 """train_abc_tps.py — train_abc.py + TD3-style target-policy smoothing
 (TPS) arm. Generated from train_abc.py; only the learner class, the
 target_smoothing_sigma flag, and the run name differ."""

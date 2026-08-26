@@ -6,12 +6,11 @@
 %          Full paper, ≤9 pages in NeurIPS format (excl. references + appendix)
 %          Double-blind — author block anonymised; repo URL held for camera-ready
 %          Non-archival (concurrent/prior submission elsewhere is allowed)
-%          Deadline: 2026-08-29 AoE  [verified against the CFP on 2026-08-24;
-%            the earlier "2026-08-20" here was wrong]
+%          Deadline: 2026-08-29 AoE
 %          Notification 2026-09-29 AoE; camera-ready 2026-11-25 AoE
 %
 % BUILD:   cd paper && latexmk -pdf -outdir=build main.tex
-%          Regenerate figures/tables first:  bash analysis/run_all.sh
+%          Regenerate figures/tables first:  bash analysis/run_all.sh --local
 %
 % WIRING:  every experimental number comes from auto-generated macros in
 %          tables/numbers.tex or tables in tables/*.tex (analysis/make_tables.py).
@@ -53,15 +52,10 @@
 
 \title{Beyond Pessimism and Diversity: What Critic Ensembles\\Regularize in Offline-to-Online RL}
 
-% NOTE (submission): double-blind — author block anonymised per the target CFP.
-% Restore for camera-ready after acceptance.
-%
+% Author block anonymised for double-blind review; the camera-ready block below
+% is restored on acceptance.
 \author{Anonymous}
-% \author{%
-%   Bowen Zhao\thanks{Corresponding author: \texttt{zhao.b@wustl.edu}.}
-%   \qquad Zhuoyu Peng\\
-%   Washington University in St.\ Louis\\
-% }
+% \author{Bowen Zhao \qquad Zhuoyu Peng\\ Washington University in St.\ Louis}
 
 \begin{document}
 \maketitle
@@ -281,7 +275,7 @@ $N{=}2$): $p\in\{0,0.01\}$, 3 seeds each, for 6 runs; 62 in total, plus a
 24-run TD3-style target-policy-smoothing (TPS) arm
 (\S\ref{sec:interventions}). All runs use
 one harness with the probe compiled in, so every run carries both score and
-sharpness; no results are mixed across harness versions (the single-seed
+sharpness; no results are mixed across harness versions (the mostly single-seed
 April-era runs of the course report are quarantined to a replication check,
 App.~\ref{app:replication}).
 \textbf{Statistics (pre-registered).} Seeds are aggregated as median with
@@ -623,11 +617,12 @@ only.}
 \section{Cross-era replication check}
 \label{app:replication}
 
-The course-report era (April 2026) ran a near-identical grid single-seed on a
-different cluster with a probe-free harness; those numbers are quarantined
-from all claims. As a sanity check we compare April values against the June
-multi-seed bands as they fill in; the pre-registered consistency criterion is
-the April value falling within the June min--max band $\pm 0.08$:
+The course-report era (April 2026) ran a near-identical grid on a different
+cluster with a probe-free harness, mostly single-seed (seed 0 is tabulated;
+five cells carry 3--5 seeds); those numbers are quarantined from all claims. As
+a sanity check we compare April values against the June multi-seed bands; the
+pre-registered consistency criterion is the April value falling within the June
+min--max band $\pm 0.08$. Every additional April seed also satisfies it.
 
 \begin{table}[htbp]
 \centering
@@ -669,8 +664,10 @@ spectral sweep remains future work.
 \section{Reproducibility}
 \label{app:repro}
 
-JAX implementation on the reference RLPD codebase; single RTX 4000 Ada (20GB)
-per run, 3.5--5.7 wall-hours per 1M-step run. Probe overhead $<\!1\%$.
+JAX implementation on the reference RLPD codebase, one run per GPU allocation:
+38 grid and 8 TPS runs on an RTX 4000 Ada (20GB), 24 grid and 16 TPS runs on
+half-card A6000 shards; 2.7--7.6 wall-hours per 1M-step run (median 4.7).
+Probe overhead $<\!1\%$.
 \textbf{Agent hyperparameters} (SAC backbone, fixed across all runs unless it is
 the swept variable): critic and actor MLPs $(256,256,256)$ with LayerNorm in the
 critic; actor/critic/temperature learning rate $3{\times}10^{-4}$ (Adam);
@@ -682,7 +679,8 @@ $\sigma_{\mathrm{TPS}}{\in}\{0,0.1,0.2,0.3\}$; seeds as stated per cell.
 All analysis (tidy tables, every figure and number in this paper) regenerates
 from logs with one script (\texttt{analysis/run\_all.sh}); the pre-registered
 statistical discipline is version-controlled alongside the harness. Code and
-logs will be released on acceptance.
-% NOTE (camera-ready): insert the public repo URL + commit hash here.
+logs accompany this submission; the repository URL is withheld for double-blind
+review and inserted at camera-ready.
+% NOTE (camera-ready): insert the public repo URL + release tag here.
 
 \end{document}

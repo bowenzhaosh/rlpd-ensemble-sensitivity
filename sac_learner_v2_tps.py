@@ -1,3 +1,4 @@
+# Copied from / derived from ikostrikov/rlpd (MIT, Copyright (c) 2022 Ilya Kostrikov, Philip J. Ball, Laura Smith); see LICENSE-rlpd.
 """SACLearnerV2 + TD3-style target-policy smoothing (TPS).
 
 Second, *surgical* action-space-smoothness intervention for the mediation

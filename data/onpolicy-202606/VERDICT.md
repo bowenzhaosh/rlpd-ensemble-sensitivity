@@ -6,7 +6,7 @@ sharpness of the ensemble-mean Q at BOTH the fixed offline (s,a_dataset) probe
 and the actor's own actions (s, π(s)) on on-policy states. Addresses the paper's
 Limitation (i) / the peer reviewers' top-impact ask.
 
-## Result (reproducible)
+## Result (reproducible: `python analysis/onpolicy_analysis.py` prints every number below)
 Config-level Spearman(sharpness, final score), permutation p, leave-one-config-out:
 - **on-policy** excl-M1 (n=8): ρ=**−0.83** (p=.016, LOCO [−0.96,−0.75]); all (n=9) ρ=−0.67 (p=.057)
 - **offline**  excl-M1 (n=8): ρ=−0.43 (p=.30, LOCO [−0.89,−0.14]); all (n=9) ρ=+0.00 (p=1.0)
@@ -16,7 +16,7 @@ Config-level Spearman(sharpness, final score), permutation p, leave-one-config-o
 So on-policy sharpness tracks score MUCH better than the offline probe — the
 predicted direction, statistically robust to LOCO/window/raw.
 
-## Adversarial audit (results-auditor, opus): UNTRUSTWORTHY as a mechanism claim
+## Independent post-hoc audit: UNTRUSTWORTHY as a mechanism claim
 1. **[BLOCKING] Q-overestimation confound.** Within-run trajectories: M1's on-policy
    roughness is NORMAL early (0.0049, |Q|=28 @50k) then EXPLODES with the Q-runaway
    (14200, |Q|=63000 @1M) — divergence over *time*, not failure-states; N10nd (good)
@@ -41,8 +41,8 @@ isolate the action-region mechanism — it is confounded with Qbar overestimatio
 region is sharper", NOT causal "predicts", NOT general (single env/seed).
 
 ## DECISION: STOP escalating; do NOT integrate as a claim; keep the paper's honest framing.
-This is the 3rd positive this session killed/qualified by adversarial audit (temporal
-precedence, mediator interaction, M=1 power-law were the others). Consistent message: the
+This is the third positive result in this analysis killed or qualified by adversarial audit
+(temporal precedence, mediator interaction, M=1 power-law were the others). Consistent message: the
 sharpness↔score mechanism is genuinely entangled with overestimation and weak — the
 paper's current honest framing (sharpness = config-level descriptor, mechanism unproven)
 is CORRECT and must not be overclaimed. Adding a confounded single-seed result would repeat

@@ -1,4 +1,4 @@
-# Experiment run list — generated from tracker_final.csv
+# Experiment run list (April 2026 era) — generated from data/april/run_tracker.csv
 # Format: env,seed,nqs,minqs,dropout,maxsteps
 # Lines starting with # are ignored
 # Prefix with DIAG for diagnostic runs (submitted with DIAG=1)

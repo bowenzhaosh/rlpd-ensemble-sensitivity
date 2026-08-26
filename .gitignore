@@ -1,7 +1,7 @@
 # run outputs on the cluster (the June fleet logs are tracked under data/washu-202606/results/)
 /results/
 /results_op/
-/logs/
+
 rlpd/
 upstream_rlpd/
 __pycache__/
@@ -21,3 +21,13 @@ data/april/slurm_logs/
 analysis/out/fleet_queue.txt
 paper/build/
 paper/.DS_Store
+/logs/*
+!/logs/.gitkeep
+# smoke/setup/fix job outputs at the repo root
+/results_smoke/
+/results_smoke_tps/
+/results_op_smoke/
+/smoke_rlpd_*.txt
+/smoke_tps_*.txt
+/setup_rlpd_*.txt
+/fixjax_*.txt

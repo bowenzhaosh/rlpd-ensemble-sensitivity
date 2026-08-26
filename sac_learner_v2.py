@@ -1,3 +1,4 @@
+# Copied from / derived from ikostrikov/rlpd (MIT, Copyright (c) 2022 Ilya Kostrikov, Philip J. Ball, Laura Smith); see LICENSE-rlpd.
 """SACLearner with bootstrap masks (A) and independent targets (B).
 Changes from original sac_learner.py:
   - bootstrap_mask: Bernoulli(0.5) mask per (head, sample) in critic loss

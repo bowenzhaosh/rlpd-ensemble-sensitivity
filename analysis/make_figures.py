@@ -62,7 +62,7 @@ def placeholder(path, msg):
     ax.text(.5, .5, f"PENDING DATA\n{msg}", ha="center", va="center",
             fontsize=9, color="crimson", transform=ax.transAxes)
     ax.set_axis_off()
-    fig.savefig(path)
+    fig.savefig(path, metadata={"CreationDate": None})
     plt.close(fig)
     print(f"  [pending] {path.name}: {msg}")
 
@@ -133,7 +133,7 @@ def fig_headline(runs):
                          loc="lower right")
     axes[0].set_ylabel("final score\n(frac. of horizon in success)")
     axes[0].legend(loc="lower right", bbox_to_anchor=(1.0, 0.10))
-    fig.savefig(path)
+    fig.savefig(path, metadata={"CreationDate": None})
     plt.close(fig)
     print(f"  fig_headline.pdf: {len(r)} runs")
 
@@ -164,7 +164,7 @@ def fig_curves(ts):
         ax.set_ylim(-0.02, 1.0)
         ax.legend(loc="lower right")
     axes[0].set_ylabel("score (frac. of horizon)")
-    fig.savefig(path)
+    fig.savefig(path, metadata={"CreationDate": None})
     plt.close(fig)
     print(f"  fig_curves.pdf: {t['seed'].nunique()} seeds")
 
@@ -249,7 +249,7 @@ def fig_sharp_track(ts, runs):
                   fontsize=6.5)
         ax.set_title(rf"(b) $\tilde S$ vs. score  ($\rho_s$={st['rho']:.2f}, "
                      rf"$n$={st['n']})")
-    fig.savefig(path)
+    fig.savefig(path, metadata={"CreationDate": None})
     plt.close(fig)
     print(f"  fig_sharp_track.pdf: scatter n={len(sc)}")
 
@@ -293,7 +293,7 @@ def fig_prospective(ts, runs):
     ax.set_ylim(-1.05, 1.05)
     ax.set_xlim(0, 1.0)
     ax.legend(loc="upper right", ncol=1)
-    fig.savefig(path)
+    fig.savefig(path, metadata={"CreationDate": None})
     plt.close(fig)
     pr.to_csv(TIDY / "prospective.csv", index=False)
     print(f"  fig_prospective.pdf: {len(pr)} probe points, "
@@ -307,7 +307,7 @@ def fig_tps(runs):
              & (runs["mq"] == 2) & (runs["drop"] == 0.0)]
     tps_done = r[r["tps"] > 0]
     if tps_done.empty:
-        return placeholder(path, "TPS arm not finished (78877)")
+        return placeholder(path, "TPS arm not finished")
     fig, axes = plt.subplots(1, 2, figsize=DOUBLE, sharey=False,
                              layout="constrained")
     for ax, env, sigmas in ((axes[0], "pen-binary-v0", [0, .1, .2, .3]),
@@ -331,7 +331,7 @@ def fig_tps(runs):
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="outside upper center", ncol=2,
                columnspacing=1.6)
-    fig.savefig(path)
+    fig.savefig(path, metadata={"CreationDate": None})
     plt.close(fig)
     print(f"  fig_tps.pdf: {len(tps_done)} TPS runs")
 
@@ -364,7 +364,7 @@ def fig_minq(ts, runs):
     axes[0].legend(loc="upper left", fontsize=6)
     fig.suptitle(r"pen, $N$=2: pessimism ($M$) moves $|\bar Q|$, "
                  r"not normalized sharpness", fontsize=8.5, fontweight="bold")
-    fig.savefig(path)
+    fig.savefig(path, metadata={"CreationDate": None})
     plt.close(fig)
     print("  fig_minq.pdf written")
 
@@ -406,7 +406,7 @@ def fig_sigma_robust(ts, runs):
                       label=r"dropout $p$=0.01")]
     fig.legend(handles=handles, loc="outside upper center", ncol=2,
                columnspacing=1.6)
-    fig.savefig(path)
+    fig.savefig(path, metadata={"CreationDate": None})
     plt.close(fig)
     print("  fig_sigma_robust.pdf written")
 
