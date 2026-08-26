@@ -13,6 +13,11 @@ Figure -> paper mapping:
   fig_tps.pdf          Fig 5  TPS dose-response, N=2 vs N=10 (pen) + door check
   fig_minq.pdf         Fig 6  M=1 vs M=2: |Q| blowup, score, sharpness (pessimism vs sharpness)
   fig_sigma_robust.pdf App    sharpness->score scatter at sigma in {.01,.05,.1}
+
+Figures are authored at the paper's text-column width (~5.5in) so that
+\\includegraphics[width=\\linewidth] renders them ~1:1 and the 8pt panel fonts
+land at their intended size. Panel layout uses constrained_layout; legends are
+kept off the data, and every colour/marker channel is spelled out in a legend.
 """
 import sys
 from pathlib import Path
@@ -20,6 +25,7 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import pandas as pd
 
@@ -28,16 +34,22 @@ from rlpd_common import PAPER_FIGS, TIDY, spearman_loco
 
 plt.rcParams.update({
     "font.size": 8, "axes.titlesize": 8.5, "axes.labelsize": 8,
-    "legend.fontsize": 7, "xtick.labelsize": 7, "ytick.labelsize": 7,
-    "figure.dpi": 150, "savefig.bbox": "tight",
+    "legend.fontsize": 6.5, "xtick.labelsize": 7, "ytick.labelsize": 7,
+    "figure.dpi": 150, "savefig.bbox": "tight", "savefig.pad_inches": 0.02,
     "axes.spines.top": False, "axes.spines.right": False,
-    "legend.frameon": False,
+    "axes.linewidth": 0.8, "lines.solid_capstyle": "round",
+    "legend.frameon": False, "legend.handletextpad": 0.4,
+    "legend.labelspacing": 0.3, "legend.borderpad": 0.3,
+    "pdf.fonttype": 42, "ps.fonttype": 42,
 })
 # Okabe-Ito (colorblind safe)
 C_NODROP, C_DROP, C_N2, C_N10, C_GREY = ("#0072B2", "#D55E00", "#009E73",
                                           "#CC79A7", "#999999")
-SINGLE = (3.3, 2.3)   # single-column-ish
-DOUBLE = (6.6, 2.3)
+C_M1 = "#882255"   # min-free (M=1) diagnostic arm
+# Author at the text-column width so width=\linewidth renders ~1:1.
+SINGLE = (3.4, 2.45)   # one-column figure
+DOUBLE = (5.5, 2.35)   # two panels across the column
+TRIPLE = (5.5, 1.95)   # three panels across the column
 
 ENVS = ["pen-binary-v0", "door-binary-v0"]
 ENV_SHORT = {"pen-binary-v0": "pen", "door-binary-v0": "door"}
@@ -60,14 +72,34 @@ def jitter(seeds, width=0.18):
     return (s - s.mean()) / max(s.max() - s.min(), 1) * width if len(s) > 1 else s * 0
 
 
-def med_band(ax, groups, color, label, marker="o"):
+def smooth(y, w=5):
+    """Light centred rolling-mean for readability (plotted lines only)."""
+    if w <= 1 or len(y) < 3:
+        return np.asarray(y, dtype=float)
+    return pd.Series(y, dtype=float).rolling(w, center=True,
+                                             min_periods=1).mean().to_numpy()
+
+
+def med_band(ax, groups, color, label, marker="o", ls="-"):
     """Plot median with min-max band over a {x: values} dict."""
     xs = sorted(groups)
     med = [np.median(groups[k]) for k in xs]
     lo = [np.min(groups[k]) for k in xs]
     hi = [np.max(groups[k]) for k in xs]
-    ax.plot(xs, med, marker=marker, ms=3.5, color=color, label=label, lw=1.2)
-    ax.fill_between(xs, lo, hi, color=color, alpha=0.18, lw=0)
+    ax.plot(xs, med, marker=marker, ms=3.8, color=color, label=label,
+            lw=1.4, ls=ls, zorder=4)
+    ax.fill_between(xs, lo, hi, color=color, alpha=0.16, lw=0, zorder=1)
+
+
+def _corner_text(ax, s, loc="upper left", color=C_GREY, size=6.5):
+    x, va_y, ha, va = {
+        "upper left": (.025, .975, "left", "top"),
+        "upper right": (.975, .975, "right", "top"),
+        "lower left": (.025, .03, "left", "bottom"),
+        "lower right": (.975, .03, "right", "bottom"),
+    }[loc]
+    ax.text(x, va_y, s, transform=ax.transAxes, ha=ha, va=va,
+            fontsize=size, color=color)
 
 
 # ---------------------------------------------------------------- fig 1
@@ -78,7 +110,7 @@ def fig_headline(runs):
              & runs["drop"].isin([0.0, 0.01])]
     if r.empty:
         return placeholder(path, "no done mq=2 runs yet")
-    fig, axes = plt.subplots(1, 2, figsize=DOUBLE)
+    fig, axes = plt.subplots(1, 2, figsize=DOUBLE, layout="constrained")
     for ax, env in zip(axes, ENVS):
         d = r[r["env"] == env]
         for drop, color, label in ((0.0, C_NODROP, "no dropout"),
@@ -91,15 +123,16 @@ def fig_headline(runs):
             med_band(ax, groups, color, label)
             for nq, sub in g.groupby("nq"):
                 ax.scatter(nq + jitter(sub["seed"]), sub["final_frac"],
-                           s=6, color=color, alpha=0.55, zorder=3, lw=0)
+                           s=7, color=color, alpha=0.5, zorder=3, lw=0)
         ax.set_xlabel("ensemble size $N$")
         ax.set_xticks([2, 4, 6, 10])
-        ax.set_title(ENV_SHORT[env])
+        ax.set_title(ENV_SHORT[env], fontweight="bold")
         ns = d.groupby(["nq", "drop"]).size()
-        ax.text(.02, .98, f"seeds/cell: {int(ns.min())}–{int(ns.max())}" if len(ns) else "",
-                transform=ax.transAxes, va="top", fontsize=6, color=C_GREY)
-    axes[0].set_ylabel("final score (frac. of horizon in success)")
-    axes[0].legend(loc="lower right")
+        if len(ns):
+            _corner_text(ax, f"{int(ns.min())}–{int(ns.max())} seeds/cell",
+                         loc="lower right")
+    axes[0].set_ylabel("final score\n(frac. of horizon in success)")
+    axes[0].legend(loc="lower right", bbox_to_anchor=(1.0, 0.10))
     fig.savefig(path)
     plt.close(fig)
     print(f"  fig_headline.pdf: {len(r)} runs")
@@ -112,7 +145,8 @@ def fig_curves(ts):
            & ts["drop"].isin([0.0, 0.01]) & ts["nq"].isin([2, 10])]
     if t.empty:
         return placeholder(path, "no pen timeseries yet")
-    fig, axes = plt.subplots(1, 2, figsize=DOUBLE, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=DOUBLE, sharey=True,
+                             layout="constrained")
     for ax, nq in zip(axes, (2, 10)):
         for drop, color, label in ((0.0, C_NODROP, "no dropout"),
                                    (0.01, C_DROP, r"dropout $p$=0.01")):
@@ -120,13 +154,15 @@ def fig_curves(ts):
             if d.empty:
                 continue
             agg = d.groupby("step")["frac"].agg(["median", "min", "max"])
-            ax.plot(agg.index / 1e6, agg["median"], color=color, lw=1.2,
+            x = agg.index / 1e6
+            ax.fill_between(x, smooth(agg["min"]), smooth(agg["max"]),
+                            color=color, alpha=0.14, lw=0)
+            ax.plot(x, smooth(agg["median"]), color=color, lw=1.4,
                     label=f"{label} (n={d['seed'].nunique()})")
-            ax.fill_between(agg.index / 1e6, agg["min"], agg["max"],
-                            color=color, alpha=0.15, lw=0)
-        ax.set_title(f"pen, $N$={nq}")
+        ax.set_title(f"pen, $N$={nq}", fontweight="bold")
         ax.set_xlabel("environment steps (M)")
-        ax.legend(loc="upper left")
+        ax.set_ylim(-0.02, 1.0)
+        ax.legend(loc="lower right")
     axes[0].set_ylabel("score (frac. of horizon)")
     fig.savefig(path)
     plt.close(fig)
@@ -151,24 +187,29 @@ def fig_sharp_track(ts, runs):
                 & (runs["tps"] == 0)]
     if t.empty or done.empty:
         return placeholder(path, "no probe data yet")
-    fig, axes = plt.subplots(1, 2, figsize=DOUBLE)
+    fig, axes = plt.subplots(1, 2, figsize=(6.4, 2.5), layout="constrained")
 
+    # ---- panel (a): sharpness during training -------------------------------
     ax = axes[0]
     styles = {(2, 0.0): (C_N2, "-"), (2, 0.01): (C_N2, "--"),
               (10, 0.0): (C_N10, "-"), (10, 0.01): (C_N10, "--")}
+    ymax = 0
     for (nq, drop), (color, ls) in styles.items():
         d = t[(t["nq"] == nq) & (t["drop"] == drop)]
         if d.empty:
             continue
         agg = d.groupby("step")["sharp_s005"].median()
-        ax.plot(agg.index / 1e6, agg.values, color=color, ls=ls, lw=1.2,
+        ax.plot(agg.index / 1e6, agg.values, color=color, ls=ls, lw=1.4,
                 label=f"$N$={nq}, " + ("$p$=0.01" if drop else "no drop"))
+        ymax = max(ymax, np.nanmax(agg.values))
     ax.set_yscale("log")
+    ax.set_ylim(top=ymax * 8)   # headroom so the legend clears the curves
     ax.set_xlabel("environment steps (M)")
     ax.set_ylabel(r"normalized sharpness $\tilde S$ ($\sigma$=0.05)")
-    ax.legend(ncol=2, loc="upper right")
-    ax.set_title("(a) sharpness during training (pen, median over seeds)")
+    ax.legend(loc="upper center", ncol=2, columnspacing=1.0)
+    _corner_text(ax, "(a)", loc="upper left", color="black", size=9)
 
+    # ---- panel (b): final sharpness vs final score --------------------------
     ax = axes[1]
     fs = final_sharp(ts)
     sc = fs.merge(done, on=["env", "nq", "mq", "drop", "tps", "seed"])
@@ -176,27 +217,38 @@ def fig_sharp_track(ts, runs):
     if sc.empty:
         ax.text(.5, .5, "pending", ha="center", transform=ax.transAxes)
     else:
+        cmap = {0.0: C_NODROP, 0.01: C_DROP}
         for env, marker in (("pen-binary-v0", "o"), ("door-binary-v0", "s")):
             d = sc[sc["env"] == env]
             if d.empty:
                 continue
-            cmap = {0.0: C_NODROP, 0.01: C_DROP}
-            ax.scatter(d["final_sharp"], d["final_frac"], s=14, marker=marker,
-                       c=[cmap.get(x, C_GREY) for x in d["drop"]],
-                       alpha=0.75, lw=0, label=ENV_SHORT[env])
-            for _, row in d[d["mq"] == 1].iterrows():
-                ax.annotate("M=1", (row["final_sharp"], row["final_frac"]),
-                            fontsize=5.5, color=C_GREY, xytext=(2, 2),
-                            textcoords="offset points")
+            base, m1 = d[d["mq"] != 1], d[d["mq"] == 1]
+            ax.scatter(base["final_sharp"], base["final_frac"], s=18,
+                       marker=marker, c=[cmap.get(x, C_GREY) for x in base["drop"]],
+                       alpha=0.8, lw=0, zorder=3)
+            # min-free arms: same colour, ringed so they read as special
+            ax.scatter(m1["final_sharp"], m1["final_frac"], s=26, marker=marker,
+                       facecolors=[cmap.get(x, C_GREY) for x in m1["drop"]],
+                       edgecolors="black", linewidths=0.7, alpha=0.9, zorder=4)
         pen = sc[sc["env"] == "pen-binary-v0"]
-        st = spearman_loco(pen, "final_sharp", "final_frac",
-                           ["nq", "mq", "drop"])
+        st = spearman_loco(pen, "final_sharp", "final_frac", ["nq", "mq", "drop"])
         ax.set_xscale("log")
         ax.set_xlabel(r"final normalized sharpness $\tilde S$")
         ax.set_ylabel("final score")
-        ax.legend(loc="lower left")
-        ax.set_title(rf"(b) $\tilde S$ vs score; pen $\rho_s$={st['rho']:.2f}"
-                     rf" (n={st['n']})")
+        handles = [
+            Line2D([], [], ls="", marker="o", ms=5, color=C_NODROP,
+                   label="no dropout"),
+            Line2D([], [], ls="", marker="o", ms=5, color=C_DROP,
+                   label=r"dropout $p$=0.01"),
+            Line2D([], [], ls="", marker="o", ms=5, color=C_GREY, label="pen"),
+            Line2D([], [], ls="", marker="s", ms=5, color=C_GREY, label="door"),
+            Line2D([], [], ls="", marker="o", ms=6, mfc="none", mec="black",
+                   mew=0.8, label="min-free ($M$=1)"),
+        ]
+        ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(1.02, 1.0),
+                  fontsize=6.5)
+        ax.set_title(rf"(b) $\tilde S$ vs. score  ($\rho_s$={st['rho']:.2f}, "
+                     rf"$n$={st['n']})")
     fig.savefig(path)
     plt.close(fig)
     print(f"  fig_sharp_track.pdf: scatter n={len(sc)}")
@@ -223,18 +275,24 @@ def fig_prospective(ts, runs):
     if not rows:
         return placeholder(path, "not enough runs for prospective curve")
     pr = pd.DataFrame(rows)
-    fig, ax = plt.subplots(figsize=SINGLE)
-    ax.plot(pr["step"] / 1e6, pr["rho"], color=C_NODROP, lw=1.3, marker="o",
-            ms=3, label=r"Spearman $\rho_s$")
+    fig, ax = plt.subplots(figsize=SINGLE, layout="constrained")
+    ax.axhspan(-1.05, 0, color=C_GREY, alpha=0.06, lw=0)  # negative = predictive
     ax.fill_between(pr["step"] / 1e6, pr["loco_lo"], pr["loco_hi"],
                     color=C_NODROP, alpha=0.18, lw=0,
                     label="leave-one-config-out range")
-    ax.axhline(0, color=C_GREY, lw=0.6)
-    ax.axvline(0.1, color=C_GREY, lw=0.6, ls=":")
+    ax.plot(pr["step"] / 1e6, pr["rho"], color=C_NODROP, lw=1.5, marker="o",
+            ms=3.5, label=r"Spearman $\rho_s$", zorder=4)
+    ax.axhline(0, color=C_GREY, lw=0.7)
+    ax.axvline(0.1, color="black", lw=0.8, ls=":")
+    ax.annotate("pre-registered\n100k checkpoint", xy=(0.1, -0.5),
+                xytext=(0.30, 0.42), fontsize=6, color="0.3",
+                ha="left", va="center",
+                arrowprops=dict(arrowstyle="->", color="0.5", lw=0.7))
     ax.set_xlabel("probe step (M)")
     ax.set_ylabel(r"$\rho_s$(sharpness@$t$, final score)")
     ax.set_ylim(-1.05, 1.05)
-    ax.legend(loc="lower left")
+    ax.set_xlim(0, 1.0)
+    ax.legend(loc="upper right", ncol=1)
     fig.savefig(path)
     plt.close(fig)
     pr.to_csv(TIDY / "prospective.csv", index=False)
@@ -250,7 +308,8 @@ def fig_tps(runs):
     tps_done = r[r["tps"] > 0]
     if tps_done.empty:
         return placeholder(path, "TPS arm not finished (78877)")
-    fig, axes = plt.subplots(1, 2, figsize=DOUBLE, sharey=False)
+    fig, axes = plt.subplots(1, 2, figsize=DOUBLE, sharey=False,
+                             layout="constrained")
     for ax, env, sigmas in ((axes[0], "pen-binary-v0", [0, .1, .2, .3]),
                             (axes[1], "door-binary-v0", [0, .2])):
         d = r[(r["env"] == env) & r["nq"].isin([2, 10]) & r["tps"].isin(sigmas)]
@@ -262,12 +321,16 @@ def fig_tps(runs):
             med_band(ax, groups, color, f"$N$={nq}")
             for s, sub in g.groupby("tps"):
                 ax.scatter(s + jitter(sub["seed"], .012), sub["final_frac"],
-                           s=6, color=color, alpha=0.5, lw=0)
-        ax.set_xlabel(r"target-policy smoothing $\sigma_{TPS}$")
-        ax.set_title(ENV_SHORT[env])
+                           s=7, color=color, alpha=0.45, lw=0, zorder=3)
+        ax.set_xlabel(r"target-policy smoothing $\sigma_{\mathrm{TPS}}$")
+        ax.set_title(ENV_SHORT[env], fontweight="bold")
         ax.set_xticks(sigmas)
+        ax.margins(x=0.12)
     axes[0].set_ylabel("final score")
-    axes[0].legend(loc="lower right")
+    # one shared legend above both panels keeps it off the curves
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="outside upper center", ncol=2,
+               columnspacing=1.6)
     fig.savefig(path)
     plt.close(fig)
     print(f"  fig_tps.pdf: {len(tps_done)} TPS runs")
@@ -279,27 +342,28 @@ def fig_minq(ts, runs):
     t = ts[(ts["env"] == "pen-binary-v0") & (ts["nq"] == 2) & (ts["tps"] == 0)]
     if t[t["mq"] == 1].empty:
         return placeholder(path, "no M=1 runs synced yet")
-    fig, axes = plt.subplots(1, 3, figsize=(6.6, 2.0), constrained_layout=True)
-    arms = [(1, 0.0, "#882255", "M=1"), (1, 0.01, "#882255", "M=1, drop"),
-            (2, 0.0, C_NODROP, "M=2"), (2, 0.01, C_NODROP, "M=2, drop")]
-    for ax, col, ylab, logy in (
-            (axes[0], "q_abs_mean_diag", r"$|\bar Q|$ on probe set", True),
-            (axes[1], "frac", "score", False),
-            (axes[2], "sharp_s005", r"normalized sharpness $\tilde S$", True)):
-        for mq, drop, color, label in arms:
+    fig, axes = plt.subplots(1, 3, figsize=TRIPLE, layout="constrained")
+    arms = [(1, 0.0, C_M1, "-", "$M$=1"), (1, 0.01, C_M1, "--", "$M$=1, drop"),
+            (2, 0.0, C_NODROP, "-", "$M$=2"), (2, 0.01, C_NODROP, "--", "$M$=2, drop")]
+    panels = ((axes[0], "q_abs_mean_diag", r"$|\bar Q|$ on probe set", True, 1),
+              (axes[1], "frac", "score", False, 9),
+              (axes[2], "sharp_s005", r"normalized sharpness $\tilde S$", True, 1))
+    for ax, col, ylab, logy, win in panels:
+        for mq, drop, color, ls, label in arms:
             d = t[(t["mq"] == mq) & (t["drop"] == drop) & t[col].notna()]
             if d.empty:
                 continue
             agg = d.groupby("step")[col].median()
-            ax.plot(agg.index / 1e6, agg.values, color=color,
-                    ls="--" if drop else "-", lw=1.1, label=label)
+            ax.plot(agg.index / 1e6, smooth(agg.values, win), color=color,
+                    ls=ls, lw=1.3, label=label)
         if logy:
             ax.set_yscale("log")
         ax.set_xlabel("steps (M)")
         ax.set_ylabel(ylab)
-    axes[0].legend(fontsize=6, loc="upper left")
-    fig.suptitle("pen, $N$=2: pessimism (M) moves $|Q|$, not normalized sharpness",
-                 fontsize=8, y=1.04)
+    axes[1].set_ylim(-0.02, 0.85)
+    axes[0].legend(loc="upper left", fontsize=6)
+    fig.suptitle(r"pen, $N$=2: pessimism ($M$) moves $|\bar Q|$, "
+                 r"not normalized sharpness", fontsize=8.5, fontweight="bold")
     fig.savefig(path)
     plt.close(fig)
     print("  fig_minq.pdf written")
@@ -312,7 +376,8 @@ def fig_sigma_robust(ts, runs):
                 & (runs["tps"] == 0) & (runs["env"] == "pen-binary-v0")]
     if done.empty:
         return placeholder(path, "no done runs yet")
-    fig, axes = plt.subplots(1, 3, figsize=(6.6, 2.0), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=TRIPLE, sharey=True,
+                             layout="constrained")
     keys = ["env", "nq", "mq", "drop", "tps", "seed"]
     wrote = False
     for ax, (sig, col) in zip(axes, (("0.01", "sharp_s001"),
@@ -324,17 +389,23 @@ def fig_sigma_robust(ts, runs):
         if sc.empty:
             continue
         wrote = True
-        ax.scatter(sc["fs"], sc["final_frac"], s=10,
+        ax.scatter(sc["fs"], sc["final_frac"], s=12,
                    c=[C_DROP if d else C_NODROP for d in sc["drop"]],
                    alpha=0.75, lw=0)
         st = spearman_loco(sc, "fs", "final_frac", ["nq", "mq", "drop"])
         ax.set_xscale("log")
-        ax.set_title(rf"$\sigma$={sig}: $\rho_s$={st['rho']:.2f} (n={st['n']})")
+        ax.set_title(rf"$\sigma$={sig}:  $\rho_s$={st['rho']:.2f} ($n$={st['n']})")
         ax.set_xlabel(r"final $\tilde S_\sigma$")
     if not wrote:
         plt.close(fig)
         return placeholder(path, "no probe data")
     axes[0].set_ylabel("final score")
+    handles = [Line2D([], [], ls="", marker="o", ms=5, color=C_NODROP,
+                      label="no dropout"),
+               Line2D([], [], ls="", marker="o", ms=5, color=C_DROP,
+                      label=r"dropout $p$=0.01")]
+    fig.legend(handles=handles, loc="outside upper center", ncol=2,
+               columnspacing=1.6)
     fig.savefig(path)
     plt.close(fig)
     print("  fig_sigma_robust.pdf written")
