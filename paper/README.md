@@ -39,3 +39,9 @@ Candidates (check CFPs when announced): NeurIPS workshops in offline/online
 RL, RL theory-practice gap, science-of-deep-learning. Non-archival preferred
 (keeps an ICLR-2028 main-track option open). Levine-orbit relevance: extends
 RLPD; future-work hook = FQL (Seohong Park) — send him the camera-ready.
+
+## Author list — CONFIRMED 2026-08-24
+**Bowen Zhao, Zhuoyu Peng** (Washington University in St. Louis).
+- Submissions are double-blind, so `main.tex` carries `\author{Anonymous}` and
+  the rendered PDF contains no names; the real list is entered on the
+  OpenReview form and uncommented for camera-ready.
