@@ -17,7 +17,7 @@ Adroit pen and door tasks, plus nine supplementary on-policy probe runs.
 ## Reproduce the analysis
 
 The archived logs are included. Analysis needs no GPU, MuJoCo, datasets download,
-cluster access, or tracking-service account. Use **Python 3.11**; the release was
+external compute access, or tracking-service account. Use **Python 3.11**; the release was
 checked with Python 3.11.7.
 
 ```bash
@@ -42,8 +42,9 @@ bash analysis/run_all.sh
 ```
 
 The default uses local data. `--local` remains an alias for that behavior.
-`RLPD_PY=/path/to/python` selects another interpreter; `--sync` explicitly fetches
-cluster logs first. See [training and cluster instructions](docs/training.md).
+`RLPD_PY=/path/to/python` selects another interpreter. The analysis pipeline
+uses only the archived local inputs; see [training instructions](docs/training.md)
+for running new experiments.
 
 The pipeline validates manifest membership, complete evaluation/probe coverage,
 finite values, and agreement between raw evaluations and summary scores before
@@ -83,7 +84,7 @@ The reported dropout benefit is largest at small ensembles. The target-policy
 smoothing intervention is inconclusive, and the sharpness correlations do not
 establish a causal mechanism or a validated model-selection rule. The additional
 single-seed on-policy probe is excluded from the manuscript's headline claims;
-its [analysis record](data/onpolicy-202606/VERDICT.md) explains the confounds.
+its [analysis record](data/onpolicy/README.md) explains the confounds.
 
 The analysis plan was recorded when 12 of 62 grid runs were complete and before
 TPS runs began. Subsequent changes to the statistical analysis are disclosed in
@@ -95,14 +96,13 @@ TPS runs began. Subsequent changes to the statistical analysis are disclosed in
 |---|---|
 | `train_abc.py`, `train_abc_tps.py` | Grid and target-policy-smoothing training entrypoints |
 | `sac_learner_v2*.py`, `diagnostic.py`, `configs/` | Critic ensemble, diagnostics, and configurations |
-| `washu_runs*.txt`, `washu_*.sbatch` | Released experiment manifests and site-specific launchers |
+| `experiments/` | Configurations for all 95 archived runs |
+| `scripts/setup_training.sh` | GPU training dependency installer |
 | `analysis/` | Input validation, statistics, tables, and figures |
 | `data/` | Archived results, provenance, and input checksums |
 | `paper/` | Manuscript, bibliography, and generated artifacts |
 | `tests/`, `.github/workflows/ci.yml` | Regression tests and reproducibility checks |
 
-The April launchers (`run.sh`, `submit_all.sh`, `experiments.txt`,
-`check_progress.sh`, `train_diagnostic.py`) remain for historical reference.
 The superseded spectral-normalization code is on
 [`spectral-norm-probe`](https://github.com/bowenzhaosh/rlpd-ensemble-sensitivity/tree/spectral-norm-probe).
 

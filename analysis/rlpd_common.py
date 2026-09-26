@@ -39,7 +39,7 @@ from scipy import stats
 # --- paths -----------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent
 APRIL_TRACKER = ROOT / "data" / "april" / "run_tracker.csv"
-WASHU_RESULTS = ROOT / "data" / "washu-202606" / "results"
+JUNE_RESULTS = ROOT / "data" / "june-2026" / "results"
 OUT = ROOT / "analysis" / "out"
 TIDY = OUT / "tidy"
 PAPER_FIGS = ROOT / "paper" / "figures"
@@ -90,10 +90,10 @@ def parse_run_name(name):
 
 # --- manifests ----------------------------------------------------------------
 def load_manifest(files=None):
-    """The 62+24 run fleet manifest from washu_runs*.txt -> DataFrame."""
+    """The 62+24 run manifest from experiments/{grid,tps}.txt -> DataFrame."""
     rows = []
     if files is None:
-        files = ((ROOT / "washu_runs.txt", False), (ROOT / "washu_runs_tps.txt", True))
+        files = ((ROOT / "experiments/grid.txt", False), (ROOT / "experiments/tps.txt", True))
     for path, has_tps in files:
         for lineno, line in enumerate(Path(path).read_text().splitlines(), 1):
             line = line.strip()
@@ -128,19 +128,19 @@ KEY = ["env", "nq", "mq", "drop", "tps", "seed"]
 
 
 # --- loaders -------------------------------------------------------------------
-def load_washu_runs():
+def load_june_runs():
     """One row per June-fleet run dir. status: done (summary.json) / running."""
     rows = []
-    if not WASHU_RESULTS.exists():
+    if not JUNE_RESULTS.exists():
         return pd.DataFrame()
-    for d in sorted(WASHU_RESULTS.iterdir()):
+    for d in sorted(JUNE_RESULTS.iterdir()):
         if not d.is_dir():
             continue
         meta = parse_run_name(d.name)
         if meta is None:
             print(f"  [warn] unparseable run dir skipped: {d.name}")
             continue
-        row = dict(meta, era="washu", run_dir=d.name)
+        row = dict(meta, era="june", run_dir=d.name)
         sj = d / "summary.json"
         if sj.exists():
             s = json.loads(sj.read_text())
@@ -171,12 +171,12 @@ def load_washu_runs():
     return df
 
 
-def load_washu_timeseries():
+def load_june_timeseries():
     """Long table: one row per (run, eval step) with score + probe columns."""
     frames = []
-    if not WASHU_RESULTS.exists():
+    if not JUNE_RESULTS.exists():
         return pd.DataFrame()
-    for d in sorted(WASHU_RESULTS.iterdir()):
+    for d in sorted(JUNE_RESULTS.iterdir()):
         log = d / "online_log.csv"
         meta = parse_run_name(d.name)
         if meta is None or not log.exists():
@@ -207,7 +207,7 @@ def load_washu_timeseries():
 
 
 def load_april_runs():
-    """April-era curated tracker -> same schema as load_washu_runs (scores only)."""
+    """April-era curated tracker -> same schema as load_june_runs (scores only)."""
     # Hand-edited tracker quirk: TODO rows carry one extra empty field
     # (13 instead of 12); drop the surplus empty so the row parses.
     def _fix(bad):
@@ -243,11 +243,11 @@ def dropout_pairs(runs, mq=2):
     """Per-(env, nq, seed) paired contrast: final_frac(drop=.01) - final_frac(0).
 
     Same harness + same seed (rule 3 allows seed pairing for dropout).
-    June (washu) era ONLY — April rows are corroboration-only and must never
+    June (june) era ONLY — April rows are corroboration-only and must never
     enter a paired claim (and would silently average into pivot cells).
     Returns tidy frame of pairs where BOTH arms are done.
     """
-    r = runs[(runs["era"] == "washu") & (runs["status"] == "done")
+    r = runs[(runs["era"] == "june") & (runs["status"] == "done")
              & (runs["mq"] == mq)
              & (runs["tps"] == 0.0) & runs["drop"].isin([0.0, 0.01])]
     piv = r.pivot_table(index=["env", "nq", "seed"], columns="drop",

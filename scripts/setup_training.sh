@@ -1,19 +1,7 @@
 #!/bin/bash
-# ================================================================
-# setup_cluster.sh — Deploy RLPD experiments to a SLURM cluster.
-#
-# What it does:
-#   1. Downloads MuJoCo 210 if missing
-#   2. Copies the rlpd/ library from upstream if missing
-#   3. Creates a conda env with pinned, tested dependencies
-#   4. Installs Adroit binary envs (mjrl, mj_envs, datasets)
-#   5. Verifies imports and compilation
-#
-# Usage (on a GPU node, not login node):
-#   bash setup_cluster.sh
-#
-# If cloned from GitHub, run from the repo directory.
-# ================================================================
+# Install the GPU training dependencies on Linux x86_64 with CUDA 12.
+# Usage: bash scripts/setup_training.sh
+# See docs/training.md for requirements and reproducibility limits.
 set -eo pipefail
 
 # The historical environment uses Linux x86_64, CUDA 12, and Python 3.10.
@@ -22,7 +10,7 @@ if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
   exit 1
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
 CONDA_ENV="${CONDA_ENV:-rlpd}"
 # Keep later pip installs from upgrading the historical JAX/NumPy stack.
@@ -31,7 +19,7 @@ export D4RL_SUPPRESS_IMPORT_ERROR=1 MUJOCO_GL=egl XLA_PYTHON_CLIENT_PREALLOCATE=
 MUJOCO_DIR="$HOME/.mujoco"
 
 echo "============================================"
-echo "RLPD Cluster Setup"
+echo "RLPD Training Setup"
 echo "  Repo:   $REPO_DIR"
 echo "  Env:    conda:$CONDA_ENV"
 echo "============================================"
@@ -53,7 +41,7 @@ fi
 
 if ! command -v gcc &>/dev/null; then
   echo "ERROR: gcc not found. mujoco-py needs a C compiler." >&2
-  echo "  Try: module load gcc" >&2
+  echo "  Install a system C/C++ compiler toolchain" >&2
   exit 1
 fi
 echo "  gcc OK"
@@ -62,7 +50,7 @@ if command -v nvidia-smi &>/dev/null; then
   GPU_INFO=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1)
   echo "  GPU: $GPU_INFO"
 else
-  echo "  WARNING: No GPU detected. Run on a GPU node for full verification."
+  echo "  WARNING: No NVIDIA GPU detected. GPU verification will fail without a CUDA device."
 fi
 
 # --- 2. MuJoCo ---
@@ -249,7 +237,6 @@ fi
 echo ""
 echo "Next steps:"
 echo "  cd $REPO_DIR"
-echo "  sbatch washu_smoke_rlpd.sbatch     # timing gate"
-echo "  sbatch washu_array.sbatch          # 62-run grid"
-echo "  sbatch washu_array_tps.sbatch      # 24-run TPS arm"
+echo "  conda activate $CONDA_ENV"
+echo "  Follow docs/training.md to run an experiment."
 echo "============================================"

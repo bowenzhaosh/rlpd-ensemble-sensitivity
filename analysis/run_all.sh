@@ -5,10 +5,9 @@ cd "$(dirname "$0")/.."
 
 usage() {
   cat <<'HELP'
-Usage: bash analysis/run_all.sh [--local | --sync] [--no-pdf]
+Usage: bash analysis/run_all.sh [--local] [--no-pdf]
 
   --local   Use the shipped logs (default; no SSH or network access).
-  --sync    Fetch cluster logs first. Configure RLPD_REMOTE and RLPD_REMOTE_DIR.
   --no-pdf  Generate validated tables and figures without requiring LaTeX.
   --help    Show this message.
 
@@ -17,18 +16,10 @@ Install dependencies with: python -m pip install -r analysis/requirements.txt
 HELP
 }
 
-SYNC=false
 PDF=true
-MODE=""
 for arg in "$@"; do
   case "$arg" in
-    --local|--sync)
-      if [[ -n "$MODE" && "$MODE" != "$arg" ]]; then
-        echo "ERROR: --local and --sync are mutually exclusive" >&2; exit 2
-      fi
-      MODE="$arg"
-      [[ "$arg" != --sync ]] || SYNC=true
-      ;;
+    --local) ;;
     --no-pdf) PDF=false ;;
     --help|-h) usage; exit 0 ;;
     *) echo "ERROR: unknown option: $arg" >&2; usage >&2; exit 2 ;;
@@ -47,9 +38,6 @@ if $PDF && ! command -v latexmk >/dev/null 2>&1; then
   exit 1
 fi
 
-if $SYNC; then
-  bash analysis/collect_results.sh
-fi
 "$PY" analysis/validate_data.py
 "$PY" analysis/build_tidy.py
 "$PY" analysis/make_figures.py

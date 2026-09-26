@@ -105,7 +105,7 @@ def _corner_text(ax, s, loc="upper left", color=C_GREY, size=6.5):
 # ---------------------------------------------------------------- fig 1
 def fig_headline(runs):
     path = PAPER_FIGS / "fig_headline.pdf"
-    r = runs[(runs["era"] == "washu") & (runs["status"] == "done")
+    r = runs[(runs["era"] == "june") & (runs["status"] == "done")
              & (runs["mq"] == 2) & (runs["tps"] == 0)
              & runs["drop"].isin([0.0, 0.01])]
     if r.empty:
@@ -184,7 +184,7 @@ def fig_sharp_track(ts, runs):
     t = ts[(ts["env"] == "pen-binary-v0") & (ts["mq"] == 2) & (ts["tps"] == 0)
            & ts["drop"].isin([0.0, 0.01]) & ts["nq"].isin([2, 10])
            & ts["sharp_s005"].notna()]
-    done = runs[(runs["era"] == "washu") & (runs["status"] == "done")
+    done = runs[(runs["era"] == "june") & (runs["status"] == "done")
                 & (runs["tps"] == 0)]
     if t.empty or done.empty:
         return placeholder(path, "no probe data yet")
@@ -258,7 +258,7 @@ def fig_sharp_track(ts, runs):
 # ---------------------------------------------------------------- fig 4
 def fig_prospective(ts, runs):
     path = PAPER_FIGS / "fig_prospective.pdf"
-    done = runs[(runs["era"] == "washu") & (runs["status"] == "done")
+    done = runs[(runs["era"] == "june") & (runs["status"] == "done")
                 & (runs["tps"] == 0) & (runs["env"] == "pen-binary-v0")]
     probes = ts[(ts["env"] == "pen-binary-v0") & (ts["tps"] == 0)
                 & ts["sharp_s005"].notna()]
@@ -304,7 +304,7 @@ def fig_prospective(ts, runs):
 # ---------------------------------------------------------------- fig 5
 def fig_tps(runs):
     path = PAPER_FIGS / "fig_tps.pdf"
-    r = runs[(runs["era"] == "washu") & (runs["status"] == "done")
+    r = runs[(runs["era"] == "june") & (runs["status"] == "done")
              & (runs["mq"] == 2) & (runs["drop"] == 0.0)]
     tps_done = r[r["tps"] > 0]
     if tps_done.empty:
@@ -373,7 +373,7 @@ def fig_minq(ts, runs):
 # ------------------------------------------------------------- appendix
 def fig_sigma_robust(ts, runs):
     path = PAPER_FIGS / "fig_sigma_robust.pdf"
-    done = runs[(runs["era"] == "washu") & (runs["status"] == "done")
+    done = runs[(runs["era"] == "june") & (runs["status"] == "done")
                 & (runs["tps"] == 0) & (runs["env"] == "pen-binary-v0")]
     if done.empty:
         return placeholder(path, "no done runs yet")

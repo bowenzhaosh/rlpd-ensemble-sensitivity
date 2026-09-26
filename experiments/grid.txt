@@ -1,16 +1,7 @@
-# WashU RTX-4000 fleet — 2026-06-10 multi-seed plan (review fix item 1)
+# Main experiment grid: 62 runs
 # Format: env,seed,nqs,minqs,dropout,maxsteps
-# All runs on the SAME harness (roughness probe incl. sigma sweep + |Q| scale),
-# so every run carries both score and sharpness. Ordered for incremental
-# completeness: full seed-0 sweep first, then seed-1, seed-2, then extra
-# headline seeds (3,4). One run per job (8h RTX-4000 walltime cap).
-#
-# Claim 1 (N x dropout grid, M=2):  pen + door, N in {2,4,6,10} x drop {0, 0.01}
-# Claim 2 (min-Q subsetting, M=1):  pen only, N=2 x drop {0, 0.01}
-# Headline (5 seeds): pen (2,2,0), (2,2,0.01), (10,2,0), (10,2,0.01)
-# Claim 3 (spectral norm) NOT here: no spectral knob in this harness — phase 2.
+# N x dropout on pen and door; M=1 ablations on pen.
 
-# ---- seed 0: pen (10) ----
 pen-binary-v0,0,2,2,0,1000000
 pen-binary-v0,0,4,2,0,1000000
 pen-binary-v0,0,6,2,0,1000000
@@ -21,8 +12,6 @@ pen-binary-v0,0,6,2,0.01,1000000
 pen-binary-v0,0,10,2,0.01,1000000
 pen-binary-v0,0,2,1,0,1000000
 pen-binary-v0,0,2,1,0.01,1000000
-
-# ---- seed 0: door (8) ----
 door-binary-v0,0,2,2,0,1000000
 door-binary-v0,0,4,2,0,1000000
 door-binary-v0,0,6,2,0,1000000
@@ -31,8 +20,6 @@ door-binary-v0,0,2,2,0.01,1000000
 door-binary-v0,0,4,2,0.01,1000000
 door-binary-v0,0,6,2,0.01,1000000
 door-binary-v0,0,10,2,0.01,1000000
-
-# ---- seed 1: pen (10) ----
 pen-binary-v0,1,2,2,0,1000000
 pen-binary-v0,1,4,2,0,1000000
 pen-binary-v0,1,6,2,0,1000000
@@ -43,8 +30,6 @@ pen-binary-v0,1,6,2,0.01,1000000
 pen-binary-v0,1,10,2,0.01,1000000
 pen-binary-v0,1,2,1,0,1000000
 pen-binary-v0,1,2,1,0.01,1000000
-
-# ---- seed 1: door (8) ----
 door-binary-v0,1,2,2,0,1000000
 door-binary-v0,1,4,2,0,1000000
 door-binary-v0,1,6,2,0,1000000
@@ -53,8 +38,6 @@ door-binary-v0,1,2,2,0.01,1000000
 door-binary-v0,1,4,2,0.01,1000000
 door-binary-v0,1,6,2,0.01,1000000
 door-binary-v0,1,10,2,0.01,1000000
-
-# ---- seed 2: pen (10) ----
 pen-binary-v0,2,2,2,0,1000000
 pen-binary-v0,2,4,2,0,1000000
 pen-binary-v0,2,6,2,0,1000000
@@ -65,8 +48,6 @@ pen-binary-v0,2,6,2,0.01,1000000
 pen-binary-v0,2,10,2,0.01,1000000
 pen-binary-v0,2,2,1,0,1000000
 pen-binary-v0,2,2,1,0.01,1000000
-
-# ---- seed 2: door (8) ----
 door-binary-v0,2,2,2,0,1000000
 door-binary-v0,2,4,2,0,1000000
 door-binary-v0,2,6,2,0,1000000
@@ -75,8 +56,6 @@ door-binary-v0,2,2,2,0.01,1000000
 door-binary-v0,2,4,2,0.01,1000000
 door-binary-v0,2,6,2,0.01,1000000
 door-binary-v0,2,10,2,0.01,1000000
-
-# ---- seeds 3,4: pen headline only (8) ----
 pen-binary-v0,3,2,2,0,1000000
 pen-binary-v0,3,2,2,0.01,1000000
 pen-binary-v0,3,10,2,0,1000000

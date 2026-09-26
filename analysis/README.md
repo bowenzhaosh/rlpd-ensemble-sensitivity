@@ -9,8 +9,7 @@ bash analysis/run_all.sh           # also compile paper/build/main.pdf
 ```
 
 Both commands use the shipped data by default. `--local` is accepted for backward
-compatibility. `--sync` fetches cluster logs first, using `RLPD_REMOTE` and
-`RLPD_REMOTE_DIR`; see [training instructions](../docs/training.md). `RLPD_PY`
+compatibility. The pipeline reads local archived inputs only. `RLPD_PY`
 selects the Python executable without a silent fallback to another environment.
 Missing LaTeX is an error unless `--no-pdf` is explicit.
 
@@ -22,8 +21,7 @@ Missing LaTeX is an error unless `--no-pdf` is explicit.
 | `build_tidy.py` | June logs and April tracker | `out/tidy/{runs,timeseries}.csv`, `progress.json` |
 | `make_figures.py` | Tidy CSVs | Seven figure PDFs, README PNG, `out/tidy/prospective.csv` |
 | `make_tables.py` | Tidy CSVs | LaTeX tables and `paper/tables/numbers.tex` result macros |
-| `onpolicy_analysis.py` | `data/onpolicy-202606/results_op/` | Supplementary analysis printed to the terminal |
-| `collect_results.sh` | Cluster result directory | Local raw logs and summaries |
+| `onpolicy_analysis.py` | `data/onpolicy/results/` | Supplementary analysis printed to the terminal |
 
 The release build requires the complete manifest and scheduled diagnostics.
 Validation happens before generated artifacts are replaced. Individual plotting

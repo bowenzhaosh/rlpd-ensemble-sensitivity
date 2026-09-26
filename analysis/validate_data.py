@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from rlpd_common import HORIZON, KEY, ROOT, WASHU_RESULTS, load_manifest, parse_run_name
+from rlpd_common import HORIZON, KEY, ROOT, JUNE_RESULTS, load_manifest, parse_run_name
 
 PROBE_COLUMNS = ("roughness", "roughness_s001", "roughness_s01", "q_abs_mean_diag")
 
@@ -100,12 +100,12 @@ def verify_checksums(root=ROOT):
     errors = []
     inventory = root / "data" / "checksums.sha256"
     expected_paths = {
-        *root.glob("data/washu-202606/results/*/online_log.csv"),
-        *root.glob("data/washu-202606/results/*/summary.json"),
-        *root.glob("data/onpolicy-202606/results_op/*/online_log.csv"),
-        *root.glob("data/onpolicy-202606/results_op/*/summary.json"),
+        *root.glob("data/june-2026/results/*/online_log.csv"),
+        *root.glob("data/june-2026/results/*/summary.json"),
+        *root.glob("data/onpolicy/results/*/online_log.csv"),
+        *root.glob("data/onpolicy/results/*/summary.json"),
         root / "data/april/run_tracker.csv",
-        root / "washu_runs.txt", root / "washu_runs_tps.txt", root / "washu_runs_op.txt",
+        root / "experiments/grid.txt", root / "experiments/tps.txt", root / "experiments/onpolicy.txt",
     }
     seen = set()
     try:
@@ -132,10 +132,10 @@ def main():
     args = parser.parse_args()
     try:
         manifest = load_manifest()
-        errors = validate_fleet(WASHU_RESULTS, manifest)
+        errors = validate_fleet(JUNE_RESULTS, manifest)
         if args.onpolicy:
-            op = load_manifest(((ROOT / "washu_runs_op.txt", False),))
-            errors += validate_fleet(ROOT / "data/onpolicy-202606/results_op", op, onpolicy=True)
+            op = load_manifest(((ROOT / "experiments/onpolicy.txt", False),))
+            errors += validate_fleet(ROOT / "data/onpolicy/results", op, onpolicy=True)
         if args.checksums:
             errors += verify_checksums()
     except (OSError, ValueError) as exc:

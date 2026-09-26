@@ -1,31 +1,13 @@
-% =============================================================================
-% Beyond Pessimism and Diversity — NeurIPS 2026 PTA Workshop submission
-%   (from CSE-5100 final project, WashU)
-%
-% TARGET:  NeurIPS 2026 PTA Workshop (Sydney, Dec 11–12)
-%          Full paper, ≤9 pages in NeurIPS format (excl. references + appendix)
-%          Double-blind — author block anonymised; repo URL held for camera-ready
-%          Non-archival (concurrent/prior submission elsewhere is allowed)
-%          Deadline: 2026-08-29 AoE
-%          Notification 2026-09-29 AoE; camera-ready 2026-11-25 AoE
-%
-% BUILD:   cd paper && latexmk -pdf -outdir=build main.tex
-%          Regenerate figures/tables first:  bash analysis/run_all.sh --local
-%
-% WIRING:  result tables, figures, and designated inline result macros come
-%          from analysis/make_tables.py and analysis/make_figures.py.
-%          Experimental settings and contextual prose are written in this source.  The WashU fleet (86 runs) is complete;
-%          \prov{} is a pass-through and all data-determined marks resolved
-%          in the 2026-06 honesty pass.
-% =============================================================================
+% Beyond Pessimism and Diversity: public manuscript source.
+% Build from the repository root: bash analysis/run_all.sh
+% Result tables, figures, and designated inline result macros are generated.
 \documentclass{article}
 
 % Pass natbib options before neurips_2026.sty loads it internally
 \PassOptionsToPackage{numbers,sort&compress}{natbib}
 
 \IfFileExists{neurips_2026.sty}%
-  {\usepackage[dblblindworkshop,final]{neurips_2026}%
-   \workshoptitle{PTA: From Pretrained Representations to Acting Agents}}%
+  {\usepackage[preprint]{neurips_2026}}%
   {\usepackage[letterpaper,textwidth=5.5in,textheight=9in]{geometry}%
    \usepackage{fancyhdr}\pagestyle{plain}%
    \usepackage[numbers,sort&compress]{natbib}}
@@ -52,10 +34,7 @@
 
 \title{Beyond Pessimism and Diversity: What Critic\\Ensembles Regularize in Offline-to-Online RL}
 
-% Author block anonymised for double-blind review; the camera-ready block below
-% is restored on acceptance.
-\author{Anonymous}
-% \author{Bowen Zhao \qquad Zhuoyu Peng\\ Washington University in St.\ Louis}
+\author{Bowen Zhao \qquad Zhuoyu Peng\\ Washington University in St.\ Louis}
 
 \begin{document}
 \maketitle
@@ -680,8 +659,7 @@ $\sigma_{\mathrm{TPS}}{\in}\{0,0.1,0.2,0.3\}$; seeds as stated per cell.
 Result tables, figures, and designated inline result macros regenerate from
 the archived evidence with one script (\texttt{analysis/run\_all.sh}); the recorded
 statistical discipline is version-controlled alongside the harness. Code and
-logs accompany this submission; the repository URL is withheld for double-blind
-review and inserted at camera-ready.
-% NOTE (camera-ready): insert the public repo URL + release tag here.
+archived logs are available at
+\url{https://github.com/bowenzhaosh/rlpd-ensemble-sensitivity}.
 
 \end{document}

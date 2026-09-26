@@ -15,23 +15,23 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from rlpd_common import (KEY, TIDY, load_april_runs, load_manifest,
-                         load_washu_runs, load_washu_timeseries)
+                         load_june_runs, load_june_timeseries)
 
 
 def main():
     TIDY.mkdir(parents=True, exist_ok=True)
 
-    washu = load_washu_runs()
+    june = load_june_runs()
     april = load_april_runs()
-    ts = load_washu_timeseries()
+    ts = load_june_timeseries()
     manifest = load_manifest()
 
-    runs = pd.concat([washu, april], ignore_index=True) if len(washu) else april
+    runs = pd.concat([june, april], ignore_index=True) if len(june) else april
     runs.to_csv(TIDY / "runs.csv", index=False)
     ts.to_csv(TIDY / "timeseries.csv", index=False)
 
     # --- progress vs manifest -------------------------------------------------
-    done = washu[washu["status"] == "done"][KEY] if len(washu) else pd.DataFrame(columns=KEY)
+    done = june[june["status"] == "done"][KEY] if len(june) else pd.DataFrame(columns=KEY)
     m = manifest.merge(done.assign(done=True), on=KEY, how="left")
     m["done"] = m["done"].eq(True)
     prog = {
@@ -45,12 +45,12 @@ def main():
     (TIDY / "progress.json").write_text(json.dumps(prog, indent=2))
 
     print(f"runs.csv:       {len(runs)} rows "
-          f"({len(washu)} washu / {len(april)} april)")
+          f"({len(june)} june / {len(april)} april)")
     print(f"timeseries.csv: {len(ts)} rows")
     print(f"fleet: main {prog['main_done']}/{prog['main_total']}, "
           f"tps {prog['tps_done']}/{prog['tps_total']}")
-    if len(washu):
-        bad = washu[washu["status"] == "done"]["final_frac"].isna().sum()
+    if len(june):
+        bad = june[june["status"] == "done"]["final_frac"].isna().sum()
         if bad:
             print(f"  [warn] {bad} done runs with unparseable final score")
 

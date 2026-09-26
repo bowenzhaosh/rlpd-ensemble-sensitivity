@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-"""On-policy vs offline sharpness analysis (results_op fleet).
+"""Compare on-policy and offline sharpness in the supplementary pen runs.
 
-Question (paper Limitation i / the reviewers' top-impact ask): does sharpness of
-the ensemble-mean Q at the actor's OWN actions (s, pi(s)) track final score, and
-show the dropout x N interaction, BETTER than the fixed offline (s, a_dataset)
-probe? Each run logs both, so it is a within-run paired comparison; configs are
-the unit (single seed -> n=9 / n=8 excl-M1), permutation-tested.
+Each run measures both probes. Configurations are the analysis unit, with one
+seed per configuration (nine total, eight excluding M=1).
 
-Usage: python analysis/onpolicy_analysis.py [results_op_dir]
-(default: data/onpolicy-202606/results_op, the shipped 9-run probe)
+Usage: python analysis/onpolicy_analysis.py [results_dir]
+Default input: data/onpolicy/results.
 """
 import json
 import re
@@ -20,8 +17,8 @@ import pandas as pd
 from scipy.stats import spearmanr
 
 RES = (Path(sys.argv[1]) if len(sys.argv) > 1
-       else Path(__file__).resolve().parent.parent / "data" / "onpolicy-202606"
-       / "results_op")
+       else Path(__file__).resolve().parent.parent / "data" / "onpolicy"
+       / "results")
 H = {"pen-binary-v0": 100, "door-binary-v0": 200}
 WIDE = {"rho": np.nan, "p": np.nan}
 RE = re.compile(r"(?P<env>[a-z-]+-v\d+)_nq(?P<nq>\d+)_mq(?P<mq>\d+)"

@@ -1,9 +1,11 @@
-# run outputs on the cluster (the June fleet logs are tracked under data/washu-202606/results/)
+# Local training outputs and dependencies
 /results/
 /results_op/
+/rlpd/
+/upstream_rlpd/
+wandb/
 
-rlpd/
-upstream_rlpd/
+# Python environments and caches
 __pycache__/
 *.pyc
 *.egg-info/
@@ -13,31 +15,14 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+
+# Local configuration and editor files
 .env
 .env.*
 !.env.example
-wandb/
 .DS_Store
 .claude/
-rlpd_*.txt
-rlpd_*_err.txt
 *.zip
 
-# April-era raw run dirs + Slurm logs (corroboration only; run_tracker.csv is the tracked source)
-data/april/results/
-data/april/slurm_logs/
-
-# regenerable pipeline state
-analysis/out/fleet_queue.txt
+# Generated manuscript build
 paper/build/
-paper/.DS_Store
-/logs/*
-!/logs/.gitkeep
-# smoke/setup/fix job outputs at the repo root
-/results_smoke/
-/results_smoke_tps/
-/results_op_smoke/
-/smoke_rlpd_*.txt
-/smoke_tps_*.txt
-/setup_rlpd_*.txt
-/fixjax_*.txt

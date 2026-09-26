@@ -136,7 +136,7 @@ def main(_):
     if "binary" in FLAGS.env_name:
         if BinaryDataset is None:
             raise ImportError(
-                "BinaryDataset is unavailable; run setup_cluster.sh on a GPU node"
+                "BinaryDataset is unavailable; run scripts/setup_training.sh on a GPU node"
             ) from BINARY_DATASET_IMPORT_ERROR
         ds = BinaryDataset(env, include_bc_data=True)
     else:

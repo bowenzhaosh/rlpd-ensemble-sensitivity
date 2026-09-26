@@ -24,15 +24,12 @@ archived evidence. Experimental settings and some historical/contextual prose
 are written in the manuscript. The main pipeline validates complete evidence
 before rebuilding; it does not certify every prose claim or citation.
 
-## Manuscript status and formatting
+## Public manuscript
 
-The source targets the NeurIPS 2026 PTA workshop and retains an explicit
-`Anonymous` author block. It currently uses `[dblblindworkshop,final]`, which
-suppresses submission line numbering. This is the existing reading-copy format,
-not a check that the manuscript meets a venue's submission requirements.
-The repository, citation metadata, and license identify the authors, Bowen Zhao
-and Zhuoyu Peng, Washington University in St. Louis. Do not treat this public
-repository as an anonymous review package.
+The source uses the NeurIPS style's `preprint` option and credits Bowen Zhao and
+Zhuoyu Peng, Washington University in St. Louis. It links the public code and data
+repository. This is a public reading copy; it does not assert conference
+acceptance or satisfy a separate anonymous-submission requirement.
 
 ## Evidence scope
 

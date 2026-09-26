@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from rlpd_common import (ROOT, WASHU_RESULTS, dropout_pairs, frac_success,
+from rlpd_common import (ROOT, JUNE_RESULTS, dropout_pairs, frac_success,
                          load_manifest, parse_run_name, spearman_config_perm)
 from validate_data import validate_fleet, verify_checksums
 
@@ -19,7 +19,7 @@ from validate_data import validate_fleet, verify_checksums
 def fleet(tmp_path):
     name = "pen-binary-v0_nq2_mq2_nodrop_s0"
     run = tmp_path / name
-    shutil.copytree(WASHU_RESULTS / name, run)
+    shutil.copytree(JUNE_RESULTS / name, run)
     meta = parse_run_name(name)
     manifest = pd.DataFrame([{**meta, "max_steps": 1000000, "arm": "main"}])
     return tmp_path, run, manifest
@@ -28,10 +28,10 @@ def fleet(tmp_path):
 def test_released_evidence():
     manifest = load_manifest()
     assert manifest.groupby("arm").size().to_dict() == {"main": 62, "tps": 24}
-    assert validate_fleet(WASHU_RESULTS, manifest) == []
-    op = load_manifest(((ROOT / "washu_runs_op.txt", False),))
+    assert validate_fleet(JUNE_RESULTS, manifest) == []
+    op = load_manifest(((ROOT / "experiments/onpolicy.txt", False),))
     assert len(op) == 9
-    assert validate_fleet(ROOT / "data/onpolicy-202606/results_op", op, onpolicy=True) == []
+    assert validate_fleet(ROOT / "data/onpolicy/results", op, onpolicy=True) == []
     assert verify_checksums() == []
 
 
@@ -110,7 +110,7 @@ def test_permutation_uses_config_medians():
 
 
 def test_one_dropout_arm_produces_no_pairs():
-    frame = pd.DataFrame([{"era": "washu", "status": "done", "env": "pen-binary-v0",
+    frame = pd.DataFrame([{"era": "june", "status": "done", "env": "pen-binary-v0",
                            "mq": 2, "nq": 2, "tps": 0., "drop": 0., "seed": 0, "final_frac": .5}])
     assert dropout_pairs(frame).empty
 
@@ -121,7 +121,7 @@ def test_success_fraction_endpoints(env, horizon):
     assert frac_success(0, env) == 1
 
 
-@pytest.mark.parametrize("args", [["--unknown"], ["--sync", "--local"]])
+@pytest.mark.parametrize("args", [["--unknown"], ["--sync"]])
 def test_build_rejects_invalid_flags_before_work(args):
     result = subprocess.run(["bash", str(ROOT / "analysis/run_all.sh"), *args], capture_output=True, text=True)
     assert result.returncode == 2 and "ERROR:" in result.stderr
@@ -144,7 +144,7 @@ def test_missing_latex_is_an_error(tmp_path):
 
 
 def test_shell_scripts_parse():
-    scripts = sorted(ROOT.glob("*.sh")) + sorted(ROOT.glob("*.sbatch")) + sorted((ROOT / "analysis").glob("*.sh"))
+    scripts = sorted(ROOT.glob("*.sh")) + sorted((ROOT / "scripts").glob("*.sh")) + sorted((ROOT / "analysis").glob("*.sh"))
     for path in scripts:
         result = subprocess.run(["bash", "-n", str(path)], capture_output=True, text=True)
         assert result.returncode == 0, f"{path.name}: {result.stderr}"

@@ -1,4 +1,4 @@
-# Constraints for subsequent installs in setup_cluster.sh.
+# Constraints for subsequent installs in scripts/setup_training.sh.
 # Mirrors the declared historical stack; not a complete environment lock.
 numpy==1.26.4
 Cython<3

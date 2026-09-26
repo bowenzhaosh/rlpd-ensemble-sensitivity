@@ -1,35 +1,25 @@
-# April 2026 archive (Delta A100 era): corroboration only
+# April 2026 replication data
 
-Course-report era runs, moved here 2026-06-11 from the local results archive.
+`run_tracker.csv` is the curated source for the April experiments. It contains
+45 completed rows: 36 standard and nine diagnostic runs, with configurations,
+seeds, scores, and original job identifiers retained for provenance. Raw logs are
+not included. Planning rows remain in the tracker and are excluded from the
+completed-run analysis.
 
-## What ships here
-- `run_tracker.csv`: **the source of truth** for April runs (env, nq, mq, dropout,
-  seed, status, Slurm job id, final/peak score), curated from the job logs at the
-  time; 45 done rows (36 standard + 9 diagnostic). Its `maxsteps` column carries the
-  planning value 2,000,000; every done run trained for 1,000,000 steps (the Slurm logs
-  and `experiments.txt` record `steps=1000000`).
-- `run_status.md`: a later human-readable snapshot. It lists five extra runs (pen
-  M=1 at N=4/6/10; door (2,2,0) seeds 1-2) and one crash that are not in the tracker
-  and are not used by any analysis.
+The tracker's `maxsteps` field records a planning value of 2,000,000; completed
+experiments used 1,000,000 steps according to the historical experiment records.
+The tracker is preserved as received, including this discrepancy.
 
-The raw April result directories and Slurm logs are kept in the authors' archive and
-are not tracked in this repository (`.gitignore`); nothing in the paper reads them.
+These results provide corroboration only. Earlier output names omitted target
+subset size and dropout, allowing different configurations to reuse a directory.
+The tracker was curated before those ambiguities were resolved. This harness also
+predates the roughness probes used by the June study, so the analyses do not pool
+the two eras.
 
-## Why this era is corroboration only
-1. **Result-dir name collisions.** April run names were
-   `<env>_nq<N>_lnTrue_<tag>_s<seed>` with no `mq` or `dropout` in the name, so
-   configs differing only in those overwrote each other's dirs (fixed in commit
-   `95fac9d`, after these runs). Only `run_tracker.csv` rows (keyed by job id) are
-   attributable.
-2. **Pre-probe harness.** No roughness/sharpness columns; scores only. The June fleet
-   re-runs every claim-bearing config on the patched harness so no claim mixes eras.
+Most configurations have one seed. Five configurations have three to five seeds.
+The paper's replication table compares April seed 0 with the June seed ranges
+using the stated tolerance. Its numerical source is this tracker alone.
 
-## Seeds
-Mostly single-seed. Five cells carry 3-5 seeds (pen (2,2,0), (2,2,0.01), (10,2,0) with
-5 seeds; door (2,2,0.01) and (10,2,0) with 3). The paper's replication table (App. D)
-tabulates April seed 0 against the June min-max band +/-0.08; every additional April
-seed also satisfies that criterion (checked 2026-08-25 from `analysis/out/tidy/runs.csv`).
-
-Score scale: `final_score` = mean of last 10 evals of `normalized_score`
-= per-episode return x 100. Floors: pen -10000 (H=100), door -20000 (H=200).
-Fraction-of-horizon-in-success = 1 + score/(100*H).
+`final_score` is the mean of the last ten evaluations of return × 100. Convert to
+the paper's fraction-of-horizon score with `1 + final_score / (100 * H)`, where
+H = 100 for pen and H = 200 for door.
