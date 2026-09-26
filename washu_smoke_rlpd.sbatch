@@ -13,7 +13,7 @@
 set -eo pipefail
 cd "$SLURM_SUBMIT_DIR"
 
-source "$HOME/miniforge3/etc/profile.d/conda.sh"
+source "${RLPD_CONDA_ROOT:-$HOME/miniforge3}/etc/profile.d/conda.sh"
 conda activate rlpd
 export D4RL_SUPPRESS_IMPORT_ERROR=1
 export MUJOCO_GL=egl
@@ -37,7 +37,7 @@ python train_abc.py \
   --results_dir=results_smoke
 
 python - <<'EOF'
-import csv, sys
+import csv, sys, math
 path = "results_smoke/pen-binary-v0_nq10_mq2_nodrop_s0/online_log.csv"
 rows = list(csv.DictReader(open(path)))
 cols = rows[0].keys()
@@ -46,7 +46,7 @@ for c in ["roughness", "roughness_s001", "roughness_s01", "q_abs_mean_diag"]:
 r0 = rows[0]
 for c in ["roughness", "roughness_s001", "roughness_s01", "q_abs_mean_diag"]:
     assert r0[c] not in ("", None), f"step-0 probe empty for {c}"
-    float(r0[c])
+    assert math.isfinite(float(r0[c])), f"nonfinite step-0 probe: {c}"
 print("PROBE COLUMNS OK:", {c: r0[c] for c in
       ["roughness", "roughness_s001", "roughness_s01", "q_abs_mean_diag"]})
 

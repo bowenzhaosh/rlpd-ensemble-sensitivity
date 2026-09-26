@@ -64,7 +64,7 @@ DONE_LOGS=$(grep -l "ALL DONE" rlpd_*.txt 2>/dev/null | wc -l | tr -d ' ')
 echo "  Output files: $TOTAL_LOGS | Finished: $DONE_LOGS"
 
 NONEMPTY_ERR=0
-for f in rlpd_*_err.txt 2>/dev/null; do
+for f in rlpd_*_err.txt; do
   [ -s "$f" ] && NONEMPTY_ERR=$((NONEMPTY_ERR + 1))
 done
 if [ "$NONEMPTY_ERR" -gt 0 ]; then

@@ -20,3 +20,32 @@ from them.
 Score scale: `final_score` in `summary.json` = mean of the last 10 evaluations of
 `normalized_score` = per-episode return × 100, in [−100·H, 0] with H = 100 (pen) and
 200 (door). Fraction-of-horizon-in-success, the paper's score, = 1 + score/(100·H).
+
+## Integrity and schema
+
+`checksums.sha256` records the 194 released inputs: 95 log/summary pairs, three
+run manifests, and the April tracker. Verify without modifying evidence:
+
+```bash
+python analysis/validate_data.py --checksums --onpolicy
+```
+
+The June main/TPS archive has 201 evaluation rows per run (0 to 1M in 5k-step
+increments). Offline diagnostics appear every 50k steps, including step 0.
+On-policy diagnostics begin at 50k. Empty diagnostic cells between probe steps
+are expected; a missing scheduled probe is an error.
+
+| Raw field | Meaning |
+|---|---|
+| `step` | Training loop index used for evaluation/checkpoint labels |
+| `success_rate` | Historical field name for the evaluation return; not a probability |
+| `normalized_score` | In these binary environments, evaluation return × 100 |
+| `roughness`, `roughness_s001`, `roughness_s01` | Offline probe roughness at sigma 0.05, 0.01, and 0.1 |
+| `q_abs_mean_diag` | Absolute mean-Q scale for sharpness normalization |
+| `final_score` (summary) | Mean of the last ten logged `normalized_score` values |
+| `peak_score`, `peak_step` (summary) | Maximum logged score and its first occurrence |
+
+Run-directory names provide ensemble/subset sizes, dropout, TPS dose, and seed.
+The historical summaries do not record all flags or dependency revisions; see
+[training limits](../docs/training.md#reproducibility-limits). The supplementary
+verdict and the smoke log are historical records, not generated result inputs.

@@ -13,7 +13,7 @@
 set -eo pipefail
 cd "$SLURM_SUBMIT_DIR"
 
-source "$HOME/miniforge3/etc/profile.d/conda.sh"
+source "${RLPD_CONDA_ROOT:-$HOME/miniforge3}/etc/profile.d/conda.sh"
 conda activate rlpd
 export D4RL_SUPPRESS_IMPORT_ERROR=1
 export MUJOCO_GL=egl
@@ -38,13 +38,13 @@ python train_abc_tps.py \
   --results_dir=results_smoke_tps
 
 python - <<'EOF'
-import csv, sys
+import csv, sys, math
 path = ("results_smoke_tps/"
         "pen-binary-v0_nq10_mq2_nodrop_tps0.2_s0/online_log.csv")
 rows = list(csv.DictReader(open(path)))  # path itself checks the tps tag
 for c in ["roughness", "roughness_s001", "roughness_s01", "q_abs_mean_diag"]:
     assert c in rows[0], f"missing column {c}"
-    float(rows[0][c])
+    assert math.isfinite(float(rows[0][c])), f"nonfinite step-0 probe: {c}"
 print("TPS RUN-NAME + PROBE COLUMNS OK")
 
 t = {int(r["step"]): float(r["elapsed_min"]) for r in rows}

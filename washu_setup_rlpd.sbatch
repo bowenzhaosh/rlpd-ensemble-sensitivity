@@ -16,10 +16,12 @@ export CONDA_PKGS_DIRS=/tmp/$USER-conda-pkgs
 mkdir -p "$CONDA_PKGS_DIRS"
 
 cd "$SLURM_SUBMIT_DIR"
+export PATH="${RLPD_CONDA_ROOT:-$HOME/miniforge3}/bin:$PATH"
+source "${RLPD_CONDA_ROOT:-$HOME/miniforge3}/etc/profile.d/conda.sh"
 bash setup_cluster.sh
 
 # --- Hard verification beyond setup_cluster.sh's soft warnings ---
-source "$HOME/miniforge3/etc/profile.d/conda.sh"
+source "${RLPD_CONDA_ROOT:-$HOME/miniforge3}/etc/profile.d/conda.sh"
 conda activate rlpd
 export D4RL_SUPPRESS_IMPORT_ERROR=1
 export MUJOCO_GL=egl

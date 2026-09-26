@@ -12,9 +12,9 @@
 % BUILD:   cd paper && latexmk -pdf -outdir=build main.tex
 %          Regenerate figures/tables first:  bash analysis/run_all.sh --local
 %
-% WIRING:  every experimental number comes from auto-generated macros in
-%          tables/numbers.tex or tables in tables/*.tex (analysis/make_tables.py).
-%          Nothing is hand-typed.  The WashU fleet (86 runs) is complete;
+% WIRING:  result tables, figures, and designated inline result macros come
+%          from analysis/make_tables.py and analysis/make_figures.py.
+%          Experimental settings and contextual prose are written in this source.  The WashU fleet (86 runs) is complete;
 %          \prov{} is a pass-through and all data-determined marks resolved
 %          in the 2026-06 honesty pass.
 % =============================================================================
@@ -50,7 +50,7 @@
 \newcommand{\Sbar}{\bar{Q}}
 \newcommand{\nsharp}[1][\sigma]{\tilde{S}_{#1}}
 
-\title{Beyond Pessimism and Diversity: What Critic Ensembles\\Regularize in Offline-to-Online RL}
+\title{Beyond Pessimism and Diversity: What Critic\\Ensembles Regularize in Offline-to-Online RL}
 
 % Author block anonymised for double-blind review; the camera-ready block below
 % is restored on acceptance.
@@ -545,7 +545,8 @@ across the grid. Auto-generated.}
 \begin{table}[htbp]
 \centering
 \caption{Pre-registered contrasts. Seed pairs are same-seed, same-harness
-dropout contrasts; config directions take one unit per $(env,N)$ cell;
+dropout contrasts; config directions use the median paired difference within
+each $(env,N)$ cell;
 $p$-values are exact two-sided binomial sign tests.}
 \label{tab:signtests}
 \small
@@ -572,10 +573,10 @@ never seed-paired with baselines (extra RNG split): distribution comparisons
 only.}
 \label{tab:tps}
 \small
-\input{tables/tps}
+\resizebox{\linewidth}{!}{\input{tables/tps}}
 \end{table}
 
-\section{Learning curves and $M{=}1$ diagnostics}
+\section{Learning curves and \texorpdfstring{$M{=}1$}{M=1} diagnostics}
 \label{app:curves}
 
 \begin{figure}[htbp]
@@ -676,8 +677,8 @@ offline:online sampling $50{:}50$; $5{,}000$ warmup steps; $20$ evaluation
 episodes every $5$k steps; \texttt{backup\_entropy} disabled. Swept:
 $N{\in}\{2,4,6,10\}$, $M{\in}\{1,2\}$, dropout $p{\in}\{0,0.01\}$,
 $\sigma_{\mathrm{TPS}}{\in}\{0,0.1,0.2,0.3\}$; seeds as stated per cell.
-All analysis (tidy tables, every figure and number in this paper) regenerates
-from logs with one script (\texttt{analysis/run\_all.sh}); the pre-registered
+Result tables, figures, and designated inline result macros regenerate from
+the archived evidence with one script (\texttt{analysis/run\_all.sh}); the recorded
 statistical discipline is version-controlled alongside the harness. Code and
 logs accompany this submission; the repository URL is withheld for double-blind
 review and inserted at camera-ready.

@@ -134,6 +134,7 @@ def fig_headline(runs):
     axes[0].set_ylabel("final score\n(frac. of horizon in success)")
     axes[0].legend(loc="lower right", bbox_to_anchor=(1.0, 0.10))
     fig.savefig(path, metadata={"CreationDate": None})
+    fig.savefig(path.with_suffix(".png"), dpi=180)
     plt.close(fig)
     print(f"  fig_headline.pdf: {len(r)} runs")
 

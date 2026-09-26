@@ -16,9 +16,18 @@
 # ================================================================
 set -eo pipefail
 
+# The historical environment uses Linux x86_64, CUDA 12, and Python 3.10.
+if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
+  echo "ERROR: training setup requires Linux x86_64; use analysis/requirements.txt for a local paper rebuild" >&2
+  exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
 CONDA_ENV="${CONDA_ENV:-rlpd}"
+# Keep later pip installs from upgrading the historical JAX/NumPy stack.
+export PIP_CONSTRAINT="$REPO_DIR/requirements-training-constraints.txt"
+export D4RL_SUPPRESS_IMPORT_ERROR=1 MUJOCO_GL=egl XLA_PYTHON_CLIENT_PREALLOCATE=false
 MUJOCO_DIR="$HOME/.mujoco"
 
 echo "============================================"
@@ -110,10 +119,10 @@ if conda env list 2>/dev/null | grep -qw "^${CONDA_ENV}"; then
   # Verify Python version
   PY_VER=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
   case "$PY_VER" in
-    3.10|3.11) echo "  Python $PY_VER OK" ;;
+    3.10) echo "  Python $PY_VER OK" ;;
     *)
-      echo "  WARNING: Python $PY_VER detected. This was tested on 3.10."
-      echo "  If you see errors, recreate: conda env remove -n $CONDA_ENV && rerun setup."
+      echo "ERROR: Python $PY_VER detected; select a Python 3.10 conda environment with CONDA_ENV." >&2
+      exit 1
       ;;
   esac
 else
@@ -146,38 +155,14 @@ python -c "import mujoco_py" || {
   exit 1
 }
 
-echo "  Installing JAX (CUDA 12)..."
-pip install -q "jax[cuda12]==0.4.30" || {
-  echo "  JAX CUDA 12 failed, trying CUDA 11..."
-  pip install -q "jax[cuda11_pip]==0.4.30" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html || {
-    echo "  WARNING: GPU JAX failed. Installing CPU JAX (training will be very slow)."
-    pip install -q "jax==0.4.30" "jaxlib==0.4.30" || { echo "ERROR: JAX install failed" >&2; exit 1; }
-  }
+echo "  Installing the pinned training requirements (CUDA 12)..."
+python -m pip install -r "$REPO_DIR/requirements.txt" || {
+  echo "ERROR: training dependencies failed to resolve/install; see the pip output above" >&2
+  exit 1
 }
 
-echo "  Installing remaining dependencies..."
-pip install -q \
-  flax==0.8.5 \
-  "orbax-checkpoint==0.5.23" \
-  "setuptools<81" \
-  optax==0.2.3 \
-  tensorflow-probability==0.23.0 \
-  gym==0.23.1 \
-  "dm-control==1.0.14" \
-  mujoco==2.3.7 \
-  ml-collections==0.1.1 \
-  absl-py==2.1.0 \
-  scipy==1.13.1 \
-  tqdm==4.66.4 \
-  wandb==0.17.5 \
-  imageio==2.34.2 \
-  "moviepy==1.0.3" \
-  gdown \
-  || { echo "ERROR: dependency install failed" >&2; exit 1; }
-
 echo "  Installing d4rl..."
-pip install -q "d4rl @ git+https://github.com/Farama-Foundation/d4rl@master" || \
-  echo "  WARNING: d4rl install had issues (may still work)"
+python -m pip install "d4rl @ git+https://github.com/Farama-Foundation/d4rl@master"
 
 # --- 5. Adroit binary envs ---
 echo ""
@@ -197,7 +182,7 @@ else
   echo "  Installing mj_envs..."
   if [ ! -d "$HOME/mj_envs" ]; then
     git clone -q --recursive https://github.com/philipjball/mj_envs.git "$HOME/mj_envs"
-    cd "$HOME/mj_envs" && git submodule update --remote 2>/dev/null || true
+    (cd "$HOME/mj_envs" && git submodule update --init --recursive)
   fi
   pip install -q -e "$HOME/mj_envs" --no-deps
 fi
@@ -227,7 +212,7 @@ echo "[6/6] Verifying..."
 ERRORS=0
 cd "$REPO_DIR"
 
-python -c "import jax; print('  JAX', jax.__version__, '| devices:', jax.devices())" || {
+python -c "import jax; print('  JAX', jax.__version__, '| devices:', jax.devices()); assert any(d.platform == 'gpu' for d in jax.devices()), 'JAX sees no GPU'" || {
   echo "  ERROR: JAX import failed"; ERRORS=$((ERRORS+1)); }
 
 python -c "import mujoco_py; print('  mujoco_py OK')" || {
@@ -239,20 +224,27 @@ from sac_learner_v2 import SACLearnerV2
 print('  SACLearnerV2 OK')
 " || { echo "  ERROR: SACLearnerV2 import failed"; ERRORS=$((ERRORS+1)); }
 
-python -c "
-import gym; import d4rl
+python - <<'VERIFY' || { echo "  ERROR: binary environment/dataset check failed"; ERRORS=$((ERRORS+1)); }
+import gym
+import d4rl
 from rlpd.data.binary_datasets import BinaryDataset
-env = gym.make('pen-binary-v0')
-obs = env.reset()
-print('  pen-binary-v0 OK (obs shape:', obs.shape, ')')
-" || { echo "  WARNING: pen-binary-v0 env test failed"; }
+from rlpd.wrappers import wrap_gym
+for name in ("pen-binary-v0", "door-binary-v0"):
+    env = wrap_gym(gym.make(name), rescale_actions=True)
+    dataset = BinaryDataset(env, include_bc_data=True)
+    assert dataset.dataset_dict["observations"].shape[0] > 0, f"Empty dataset: {name}"
+    print(name, "environment and dataset OK")
+    env.close()
+VERIFY
+python -m pip check || { echo "  ERROR: inconsistent Python dependencies"; ERRORS=$((ERRORS+1)); }
 
 echo ""
 echo "============================================"
 if [ "$ERRORS" -eq 0 ]; then
   echo "SETUP COMPLETE"
 else
-  echo "SETUP COMPLETE WITH $ERRORS ERROR(S)"
+  echo "SETUP FAILED WITH $ERRORS ERROR(S)" >&2
+  exit 1
 fi
 echo ""
 echo "Next steps:"

@@ -20,8 +20,9 @@ from rlpd.data import ReplayBuffer
 from rlpd.data.d4rl_datasets import D4RLDataset
 try:
     from rlpd.data.binary_datasets import BinaryDataset
-except Exception:
-    pass
+except ImportError as exc:
+    BinaryDataset = None
+    BINARY_DATASET_IMPORT_ERROR = exc
 from rlpd.evaluation import evaluate
 from rlpd.wrappers import wrap_gym
 from diagnostic import setup_diag_buffer, run_diagnostic
@@ -66,6 +67,9 @@ def combine(one_dict, other_dict):
 
 
 def main(_):
+    if FLAGS.critic_reset_step != 0:
+        raise ValueError(
+            "train_diagnostic.py does not implement critic resets; use train_abc.py")
     kwargs = dict(FLAGS.config)
     kwargs.pop("model_cls")
     nqs = kwargs.get("num_qs", 10)
@@ -74,7 +78,8 @@ def main(_):
     drop = kwargs.get("critic_dropout_rate", None)
     drop_tag = "drop{}".format(drop) if drop else "nodrop"
 
-    # Run name encodes every config so dropout/no-dropout runs don't collide.
+    # Run name distinguishes the diagnostic grid; use a separate results_dir
+    # when changing settings that are not represented in the name.
     tag = "diag_nq{}_mq{}_{}".format(nqs, min_qs, drop_tag)
     run_name = "{}_{}_s{}".format(FLAGS.env_name, tag, FLAGS.seed)
     log_dir = os.path.join(FLAGS.results_dir, run_name)
@@ -100,6 +105,10 @@ def main(_):
     env.seed(FLAGS.seed)
 
     if "binary" in FLAGS.env_name:
+        if BinaryDataset is None:
+            raise ImportError(
+                "BinaryDataset is unavailable; run setup_cluster.sh on a GPU node"
+            ) from BINARY_DATASET_IMPORT_ERROR
         ds = BinaryDataset(env, include_bc_data=True)
     else:
         ds = D4RLDataset(env)

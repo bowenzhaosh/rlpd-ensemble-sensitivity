@@ -1,0 +1,4 @@
+-r analysis/requirements.txt
+pytest==8.4.2
+ruff==0.13.2
+cffconvert==2.0.0

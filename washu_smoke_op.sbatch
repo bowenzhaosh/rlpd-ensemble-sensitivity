@@ -11,7 +11,7 @@
 # columns populate and the run does not crash. Writes to results_op_smoke/.
 set -eo pipefail
 cd "$SLURM_SUBMIT_DIR"
-source "$HOME/miniforge3/etc/profile.d/conda.sh"; conda activate rlpd
+source "${RLPD_CONDA_ROOT:-$HOME/miniforge3}/etc/profile.d/conda.sh"; conda activate rlpd
 [ "$CONDA_DEFAULT_ENV" = "rlpd" ] || { echo "ERROR: conda activate rlpd failed"; exit 1; }
 export D4RL_SUPPRESS_IMPORT_ERROR=1 MUJOCO_GL=egl XLA_PYTHON_CLIENT_PREALLOCATE=false WANDB_MODE=disabled
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:$HOME/.mujoco/mujoco210/bin:/usr/lib/nvidia:/usr/lib64/nvidia"
@@ -25,4 +25,16 @@ LOG=results_op_smoke/pen-binary-v0_nq2_mq2_nodrop_s0/online_log.csv
 echo "=== SMOKE HEADER ==="; head -1 "$LOG"
 echo "=== SMOKE rows (50k probe should have roughness_onpolicy) ==="; tail -3 "$LOG"
 echo "=== SMOKE SUMMARY ==="; cat results_op_smoke/pen-binary-v0_nq2_mq2_nodrop_s0/summary.json
+python - <<'VERIFY'
+import csv
+import math
+from pathlib import Path
+path = Path("results_op_smoke/pen-binary-v0_nq2_mq2_nodrop_s0/online_log.csv")
+with path.open() as handle:
+    rows = list(csv.DictReader(handle))
+probe = next(row for row in rows if int(row["step"]) == 50000)
+for column in ("roughness_onpolicy", "q_abs_mean_diag_onpolicy"):
+    assert math.isfinite(float(probe[column])), f"Missing/nonfinite on-policy probe: {column}"
+print("ON-POLICY PROBE OK")
+VERIFY
 echo "SMOKE_DONE"

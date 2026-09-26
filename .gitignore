@@ -7,6 +7,16 @@ upstream_rlpd/
 __pycache__/
 *.pyc
 *.egg-info/
+.venv/
+.venv-*/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.env
+.env.*
+!.env.example
+wandb/
 .DS_Store
 .claude/
 rlpd_*.txt

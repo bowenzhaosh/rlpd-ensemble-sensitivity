@@ -1,8 +1,7 @@
 """Shared constants, parsers, and statistics for the RLPD sharpness analysis.
 
 PRE-REGISTERED ANALYSIS DISCIPLINE (written 2026-06-11, while the fleet was
-12/62 complete and the TPS arm had not started — i.e. before seeing the data
-these rules will be applied to):
+12/62 complete and the TPS arm had not started):
 
   1. Aggregate across seeds with MEDIAN; report MIN-MAX bands. Never
      mean +/- SEM at n <= 5.
@@ -26,7 +25,7 @@ these rules will be applied to):
      divergent (mq=1, nodrop) configs.
   8. "Final score" = summary.json final_score (mean of last 10 evals), fixed
      by the harness before launch. "Final sharpness" = median of the probes
-     in the last 200k steps (5 probes).
+     at steps > 800k through 1M (four probes: 850k, 900k, 950k, 1M).
 """
 
 import json
@@ -90,21 +89,39 @@ def parse_run_name(name):
 
 
 # --- manifests ----------------------------------------------------------------
-def load_manifest():
+def load_manifest(files=None):
     """The 62+24 run fleet manifest from washu_runs*.txt -> DataFrame."""
     rows = []
-    for fname, has_tps in (("washu_runs.txt", False), ("washu_runs_tps.txt", True)):
-        for line in (ROOT / fname).read_text().splitlines():
+    if files is None:
+        files = ((ROOT / "washu_runs.txt", False), (ROOT / "washu_runs_tps.txt", True))
+    for path, has_tps in files:
+        for lineno, line in enumerate(Path(path).read_text().splitlines(), 1):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            f = line.split(",")
+            f = [field.strip() for field in line.split(",")]
+            if len(f) != (7 if has_tps else 6):
+                raise ValueError(f"{path}:{lineno}: invalid manifest field count")
             rows.append({
                 "env": f[0], "seed": int(f[1]), "nq": int(f[2]), "mq": int(f[3]),
                 "drop": float(f[4]), "tps": float(f[5]) if has_tps else 0.0,
                 "arm": "tps" if has_tps else "main",
+                "max_steps": int(f[-1]),
             })
-    return pd.DataFrame(rows)
+    manifest = pd.DataFrame(rows)
+    if manifest.empty:
+        raise ValueError("The run manifest is empty")
+    if manifest.duplicated(KEY).any():
+        raise ValueError("Duplicate run keys in the manifest")
+    valid = (manifest["env"].isin(HORIZON) & (manifest["nq"] >= 1)
+             & (manifest["mq"] >= 1) & (manifest["mq"] <= manifest["nq"])
+             & manifest["drop"].between(0, 1, inclusive="left")
+             & (manifest["tps"] >= 0) & (manifest["seed"] >= 0)
+             & (manifest["max_steps"] > 0)
+             & (manifest["max_steps"] % 50000 == 0))
+    if not valid.all():
+        raise ValueError("Invalid environment, configuration, or step count in manifest")
+    return manifest
 
 
 KEY = ["env", "nq", "mq", "drop", "tps", "seed"]
@@ -235,6 +252,7 @@ def dropout_pairs(runs, mq=2):
              & (runs["tps"] == 0.0) & runs["drop"].isin([0.0, 0.01])]
     piv = r.pivot_table(index=["env", "nq", "seed"], columns="drop",
                         values="final_frac")
+    piv = piv.reindex(columns=[0.0, 0.01])
     piv = piv.dropna(subset=[0.0, 0.01])
     piv["delta"] = piv[0.01] - piv[0.0]
     return piv.reset_index()
@@ -287,6 +305,10 @@ def spearman_config_perm(df, xcol, ycol, config_cols, n_perm=20000, seed=0):
         return dict(rho=np.nan, p=np.nan, n_configs=n,
                     loco_lo=np.nan, loco_hi=np.nan)
     x, y = g[xcol].to_numpy(), g[ycol].to_numpy()
+    if (not np.isfinite(x).all() or not np.isfinite(y).all()
+            or np.unique(x).size < 2 or np.unique(y).size < 2):
+        return dict(rho=np.nan, p=np.nan, n_configs=n,
+                    loco_lo=np.nan, loco_hi=np.nan)
     rho = stats.spearmanr(x, y)[0]
     rng = np.random.RandomState(seed)
     ge = 0

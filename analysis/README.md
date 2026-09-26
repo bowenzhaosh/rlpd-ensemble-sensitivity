@@ -1,57 +1,79 @@
-# analysis/ — fleet logs → paper pipeline
+# Analysis pipeline
 
-One command rebuilds everything from the logs shipped in `data/`:
+From the repository root, activate the environment described in the
+[top-level README](../README.md#reproduce-the-analysis), then run:
 
 ```bash
-RLPD_PY=python3 bash analysis/run_all.sh --local
+bash analysis/run_all.sh --no-pdf  # tables and figures
+bash analysis/run_all.sh           # also compile paper/build/main.pdf
 ```
 
-(tidy CSVs → all paper figures → all paper tables incl. inline-number macros →
-`paper/build/main.pdf`). Without `--local` it first rsyncs from the cluster via
-`collect_results.sh`. The pipeline is idempotent and safe on partial data: missing
-configs render as red `[pending]` markers plus a provisional banner in the PDF, so a
-draft can never silently present incomplete numbers as final. With the complete fleet
-(`out/tidy/progress.json`: 62/62 + 24/24) the banner is off and `\prov{}` is a
-pass-through.
+Both commands use the shipped data by default. `--local` is accepted for backward
+compatibility. `--sync` fetches cluster logs first, using `RLPD_REMOTE` and
+`RLPD_REMOTE_DIR`; see [training instructions](../docs/training.md). `RLPD_PY`
+selects the Python executable without a silent fallback to another environment.
+Missing LaTeX is an error unless `--no-pdf` is explicit.
 
 ## Stages
-| Script | In | Out |
+
+| Script | Input | Output |
 |---|---|---|
-| `collect_results.sh` | cluster `~/rlpd_experiments/results/` | `data/washu-202606/results/` (logs + summaries only) |
-| `build_tidy.py` | both data eras | `out/tidy/{runs,timeseries,prospective}.csv`, `progress.json` |
-| `make_figures.py` | tidy CSVs | `paper/figures/fig_*.pdf` (7 figures) |
-| `make_tables.py` | tidy CSVs | `paper/tables/*.tex` incl. `numbers.tex` inline macros |
-| `onpolicy_analysis.py` | `data/onpolicy-202606/results_op/` (default) | every number in `data/onpolicy-202606/VERDICT.md`; run `python analysis/onpolicy_analysis.py` |
+| `validate_data.py` | Manifest and raw June logs | Fails if membership, steps, probes, metadata, or scores disagree |
+| `build_tidy.py` | June logs and April tracker | `out/tidy/{runs,timeseries}.csv`, `progress.json` |
+| `make_figures.py` | Tidy CSVs | Seven figure PDFs, README PNG, `out/tidy/prospective.csv` |
+| `make_tables.py` | Tidy CSVs | LaTeX tables and `paper/tables/numbers.tex` result macros |
+| `onpolicy_analysis.py` | `data/onpolicy-202606/results_op/` | Supplementary analysis printed to the terminal |
+| `collect_results.sh` | Cluster result directory | Local raw logs and summaries |
 
-Needs Python ≥ 3.10 (tested with 3.11.7) and `analysis/requirements.txt`; `RLPD_PY`
-selects the interpreter (default: a pyenv path on the authors' machine, falling back
-to `python3`). Figure PDFs are written without a creation timestamp, so a rebuild is
-byte-identical.
+The release build requires the complete manifest and scheduled diagnostics.
+Validation happens before generated artifacts are replaced. Individual plotting
+and table functions retain some provisional-data handling for development, but
+partial-data builds are not a supported publication workflow.
 
-## Pre-registered analysis discipline
-Locked 2026-06-11 at fleet 12/62, TPS 0/24, i.e. before the data existed. Full text in
-the `rlpd_common.py` docstring. Summary:
-1. Median + min-max bands across seeds; never mean ± SEM at n ≤ 5.
-2. Cross-config consistency via exact binomial sign tests (one unit per config).
-3. Same-seed pairing allowed for dropout contrasts; **never** for TPS arms (extra RNG
-   split ⇒ unpaired trajectories): TPS gets distribution stats (median/min-max +
-   Mann-Whitney U) only.
-4. No single-seed claims; n = 1 cells are typographically flagged.
-5. Sharpness ≡ roughness / |Q̄|² (Q-scale normalization); probe rows with |Q̄| < 1 masked
-   (step 0 only in practice).
-6. σ = 0.05 headline; σ ∈ {0.01, 0.1} robustness sweep must preserve orderings.
-7. Prospective test: Spearman ρ(sharpness@t, final score), pen primary,
-   leave-one-config-out range; with/without divergent M = 1 configs.
-8. Final score = `summary.json` `final_score` (mean of last 10 evals, fixed in the
-   harness pre-launch). Final sharpness = median of probes in the last 200k steps.
+To also verify the fixed input hashes and the supplementary probe archive:
 
-Added after the fleet landed, in response to a results audit (2026-06-13): the
-prospective and sharpness-score correlations are reported at the **config level** with a
-permutation null and leave-one-config-out range (`spearman_config_perm`), because the
-pre-registered pooled-over-seeds statistic double-counts correlated seeds; the pooled
-figure is still printed and labelled anticonservative. A post-hoc dropout × N
-interaction Mann-Whitney test is computed into `numbers.tex` (`\DropInteractionP`,
-0.008 pen / 0.400 door) but the paper quotes only the descriptive full-separation
-statement for that contrast.
+```bash
+python analysis/validate_data.py --checksums --onpolicy
+python analysis/onpolicy_analysis.py
+```
 
-April-era data (`data/april/`) is corroboration only; see `data/april/README.md`.
+The tested stack is Python 3.11.7 with `requirements.txt` in this directory.
+Generated numerical artifacts and figure PDFs matched the committed versions in
+that environment. Figure timestamps are suppressed, but rendering dependencies
+and platforms can still affect PDF bytes.
+
+## Recorded analysis plan and amendments
+
+The plan in the `rlpd_common.py` docstring was recorded on 2026-06-11, when 12/62
+grid runs were complete and before TPS runs began. It calls for seed medians and
+min–max bands, same-seed dropout contrasts, unpaired TPS comparisons, Q-scale
+normalization, a headline probe scale of 0.05 with 0.01/0.1 sensitivity checks,
+and prospective sharpness-score associations.
+
+After the fleet completed, the 2026-06-13 analysis added config-level Spearman
+correlations with a permutation null and leave-one-config-out ranges. The
+pooled-over-seeds correlations remain available and are labeled anticonservative.
+A post-hoc dropout × ensemble-size interaction Mann–Whitney test is also computed;
+the paper uses the descriptive separation statement for that contrast.
+
+## Definitions and aggregation
+
+- Final score is the last ten evaluations' mean, taken from `summary.json` and
+  independently checked against `online_log.csv`.
+- Normalized sharpness is roughness divided by `q_abs_mean_diag` squared. Rows
+  with Q scale below 1 are masked.
+- Final sharpness is each run's median over **four probes**, at 850k, 900k, 950k,
+  and 1M steps (`step > 800000`). This preserves the released implementation.
+- Headline dropout deltas are differences of arm medians. Sign-table config
+  directions use the median of **same-seed paired differences**, which can have
+  a different sign. Seed-level p-values and config-direction counts have
+  different denominators; the table labels them separately.
+- The TPS raw-roughness manipulation percentage pools last-window probe rows
+  before taking a median. It is a descriptive manipulation check.
+- TPS arms are never seed-paired with baselines, because their random-key
+  consumption differs. April results are kept separate as corroboration.
+
+Tests cover corrupted/missing inputs, duplicate/truncated evaluations, missing
+probes, summary disagreement, unknown runs, constant-input correlations, and
+incomplete dropout pairs. The underlying training reproducibility limits are
+listed in [docs/training.md](../docs/training.md#reproducibility-limits).

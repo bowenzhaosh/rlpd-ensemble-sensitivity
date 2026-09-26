@@ -22,8 +22,9 @@ from rlpd.data import ReplayBuffer
 from rlpd.data.d4rl_datasets import D4RLDataset
 try:
     from rlpd.data.binary_datasets import BinaryDataset
-except Exception:
-    pass
+except ImportError as exc:
+    BinaryDataset = None
+    BINARY_DATASET_IMPORT_ERROR = exc
 from rlpd.evaluation import evaluate
 from rlpd.wrappers import wrap_gym
 from diagnostic import setup_diag_buffer, compute_roughness_multi
@@ -102,8 +103,8 @@ def main(_):
     drop = kwargs.get("critic_dropout_rate", None)
     drop_tag = "drop{}".format(drop) if drop else "nodrop"
 
-    # Run name encodes every config that distinguishes runs, so paired runs
-    # in the same SLURM job never overwrite each other's results.
+    # Run name encodes the published grid. Use a separate results_dir when
+    # changing other settings (steps, LayerNorm, offline ratio, actor delay).
     parts = [FLAGS.env_name, "nq{}".format(nqs), "mq{}".format(mqs),
              drop_tag, "tps{}".format(FLAGS.target_smoothing_sigma),
              "s{}".format(FLAGS.seed)]
@@ -131,6 +132,10 @@ def main(_):
     env.seed(FLAGS.seed)
 
     if "binary" in FLAGS.env_name:
+        if BinaryDataset is None:
+            raise ImportError(
+                "BinaryDataset is unavailable; run setup_cluster.sh on a GPU node"
+            ) from BINARY_DATASET_IMPORT_ERROR
         ds = BinaryDataset(env, include_bc_data=True)
     else:
         ds = D4RLDataset(env)

@@ -1,0 +1,61 @@
+name: Reproducibility checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            analysis/requirements.txt
+            requirements-dev.txt
+      - name: Install analysis and development dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Validate citation metadata
+        run: cffconvert --validate
+      - name: Static checks and regression tests
+        run: |
+          python -m ruff check .
+          python -m pytest -q
+      - name: Validate archived evidence and hashes
+        run: python analysis/validate_data.py --checksums --onpolicy
+      - name: Rebuild analysis artifacts
+        run: bash analysis/run_all.sh --no-pdf
+      - name: Check generated result files
+        # Rendering libraries/platforms can change PDF bytes; compare numeric outputs.
+        run: git diff --exit-code -- analysis/out/tidy paper/tables
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: analysis-artifacts
+          path: |
+            analysis/out/tidy
+            paper/tables
+            paper/figures
+          if-no-files-found: error
+
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y latexmk texlive-latex-extra texlive-fonts-recommended
+      - name: Compile manuscript from regenerated result artifacts
+        working-directory: paper
+        run: latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build main.tex
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: manuscript
+          path: paper/build/main.pdf
+          if-no-files-found: error

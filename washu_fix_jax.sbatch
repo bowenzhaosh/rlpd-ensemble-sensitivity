@@ -12,7 +12,7 @@
 # plugin stayed at 0.4.30 -> GPU silently unusable. Downgrade jointly and
 # hard-verify GPU compute + envs + datasets.
 set -eo pipefail
-source "$HOME/miniforge3/etc/profile.d/conda.sh"
+source "${RLPD_CONDA_ROOT:-$HOME/miniforge3}/etc/profile.d/conda.sh"
 conda activate rlpd
 export PIP_NO_CACHE_DIR=1
 

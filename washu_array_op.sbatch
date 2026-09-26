@@ -43,7 +43,7 @@ echo "=========================================="
 echo "OP-RUN: $run_name  steps=$maxsteps  node=$(hostname)  $(date)"
 echo "=========================================="
 
-source "$HOME/miniforge3/etc/profile.d/conda.sh"
+source "${RLPD_CONDA_ROOT:-$HOME/miniforge3}/etc/profile.d/conda.sh"
 conda activate rlpd
 [ "$CONDA_DEFAULT_ENV" = "rlpd" ] || { echo "ERROR: conda activate rlpd failed"; exit 1; }
 
