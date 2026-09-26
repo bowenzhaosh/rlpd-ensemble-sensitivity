@@ -59,8 +59,8 @@ def frac_success(score100, env):
 
 
 # --- run-name parsing (June fleet) -------------------------------------------
-# train_abc.py:     <env>_nq<N>_mq<M>_<nodrop|drop<p>>[_<tag>]_s<seed>
-# train_abc_tps.py: <env>_nq<N>_mq<M>_<nodrop|drop<p>>_tps<sigma>[_<tag>]_s<seed>
+# training.grid: <env>_nq<N>_mq<M>_<nodrop|drop<p>>[_<tag>]_s<seed>
+# training.tps:  <env>_nq<N>_mq<M>_<nodrop|drop<p>>_tps<sigma>[_<tag>]_s<seed>
 _RUN_RE = re.compile(
     r"^(?P<env>[a-zA-Z0-9-]+?-v\d+)"
     r"_nq(?P<nq>\d+)_mq(?P<mq>\d+)"

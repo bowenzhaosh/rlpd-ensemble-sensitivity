@@ -6,7 +6,7 @@ set -eo pipefail
 
 # The historical environment uses Linux x86_64, CUDA 12, and Python 3.10.
 if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
-  echo "ERROR: training setup requires Linux x86_64; use analysis/requirements.txt for a local paper rebuild" >&2
+  echo "ERROR: training setup requires Linux x86_64; use requirements/analysis.txt for a local paper rebuild" >&2
   exit 1
 fi
 
@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
 CONDA_ENV="${CONDA_ENV:-rlpd}"
 # Keep later pip installs from upgrading the historical JAX/NumPy stack.
-export PIP_CONSTRAINT="$REPO_DIR/requirements-training-constraints.txt"
+export PIP_CONSTRAINT="$REPO_DIR/requirements/training-constraints.txt"
 export D4RL_SUPPRESS_IMPORT_ERROR=1 MUJOCO_GL=egl XLA_PYTHON_CLIENT_PREALLOCATE=false
 MUJOCO_DIR="$HOME/.mujoco"
 
@@ -144,13 +144,16 @@ python -c "import mujoco_py" || {
 }
 
 echo "  Installing the pinned training requirements (CUDA 12)..."
-python -m pip install -r "$REPO_DIR/requirements.txt" || {
+python -m pip install -r "$REPO_DIR/requirements/training.txt" || {
   echo "ERROR: training dependencies failed to resolve/install; see the pip output above" >&2
   exit 1
 }
 
 echo "  Installing d4rl..."
 python -m pip install "d4rl @ git+https://github.com/Farama-Foundation/d4rl@master"
+
+echo "  Installing the experiment package..."
+python -m pip install --no-deps -e "$REPO_DIR"
 
 # --- 5. Adroit binary envs ---
 echo ""
@@ -208,7 +211,7 @@ python -c "import mujoco_py; print('  mujoco_py OK')" || {
 
 python -c "
 from rlpd.networks import Ensemble, MLP, StateActionValue, subsample_ensemble
-from sac_learner_v2 import SACLearnerV2
+from ensemble_sensitivity.agents.sac import SACLearnerV2
 print('  SACLearnerV2 OK')
 " || { echo "  ERROR: SACLearnerV2 import failed"; ERRORS=$((ERRORS+1)); }
 

@@ -6,9 +6,10 @@ conference and is not covered by the repository's MIT license.
 The following files are copied from or derived from the reference RLPD
 implementation, https://github.com/ikostrikov/rlpd, and remain under its license
 reproduced below: configs/td_config.py, configs/sac_config.py,
-configs/rlpd_config.py, sac_learner_v2.py, sac_learner_v2_tps.py, and the
-training scripts train_abc.py, train_abc_tps.py, train_diagnostic.py (adapted
-from the upstream fine-tuning training script).
+configs/rlpd_config.py, src/ensemble_sensitivity/agents/sac.py,
+src/ensemble_sensitivity/agents/tps.py, and the modules in
+src/ensemble_sensitivity/training/ (adapted from the upstream fine-tuning
+training script).
 
 MIT License
 

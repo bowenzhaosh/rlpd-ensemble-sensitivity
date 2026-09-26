@@ -1,3 +1,23 @@
+[build-system]
+requires = ["setuptools>=65.5,<81", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rlpd-ensemble-sensitivity"
+version = "0.1.0"
+description = "Critic ensemble experiments for Beyond Pessimism and Diversity"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "Bowen Zhao"}, {name = "Zhuoyu Peng"}]
+
+[project.urls]
+Repository = "https://github.com/bowenzhaosh/rlpd-ensemble-sensitivity"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ensemble_sensitivity*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["analysis"]

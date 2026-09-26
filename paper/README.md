@@ -1,45 +1,28 @@
 # Manuscript
 
-The source is `main.tex`, with references in `refs.bib` and generated results in
-`figures/` and `tables/`.
+The manuscript source is [`main.tex`](main.tex), with references in
+[`refs.bib`](refs.bib). Tables and figures are generated from the
+released data by the [analysis pipeline](../analysis/README.md).
 
-## Build
-
-From the repository root, after installing the analysis dependencies and LaTeX:
+After installing the [analysis dependencies](../requirements/analysis.txt) and
+LaTeX with `latexmk`, run from the repository root:
 
 ```bash
 bash analysis/run_all.sh
-# paper/build/main.pdf
 ```
 
-To compile the already committed result artifacts without running analysis:
+The compiled manuscript is written to `paper/build/main.pdf`. The build directory
+is ignored by Git. To compile the source using the committed tables and figures:
 
 ```bash
 cd paper
 latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build main.tex
 ```
 
-Result tables, figures, and designated inline result macros are generated from
-archived evidence. Experimental settings and some historical/contextual prose
-are written in the manuscript. The main pipeline validates complete evidence
-before rebuilding; it does not certify every prose claim or citation.
+The source uses the NeurIPS `preprint` style with author names. It is a public
+manuscript, with no claim of conference acceptance. Rebuilding verifies the
+generated results; it does not certify every prose claim or citation.
 
-## Public manuscript
-
-The source uses the NeurIPS style's `preprint` option and credits Bowen Zhao and
-Zhuoyu Peng, Washington University in St. Louis. It links the public code and data
-repository. This is a public reading copy; it does not assert conference
-acceptance or satisfy a separate anonymous-submission requirement.
-
-## Evidence scope
-
-Headline results use the June multi-seed fleet. The April replication table uses
-a curated tracker whose raw logs are unavailable. TPS contrasts are unpaired and
-the intervention is reported as inconclusive. Config-level permutation
-correlations are distinguished from pooled-over-seeds statistics.
-The supplementary single-seed on-policy probe is not a headline claim.
-
-See [analysis methods](../analysis/README.md) for exact aggregation definitions
-and amendments to the recorded analysis plan, and [data provenance](../data/README.md)
-for archive coverage. Check venue formatting and publication status separately
-before distributing a submission or camera-ready version.
+See [results and scope](../docs/results.md), [analysis methods](../analysis/README.md),
+and [data provenance](../data/README.md) for aggregation definitions, analysis
+amendments, and archive coverage.

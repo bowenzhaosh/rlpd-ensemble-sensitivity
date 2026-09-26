@@ -1,16 +1,13 @@
 # Copied from / derived from ikostrikov/rlpd (MIT, Copyright (c) 2022 Ilya Kostrikov, Philip J. Ball, Laura Smith); see LICENSE-rlpd.
 """SACLearnerV2 + TD3-style target-policy smoothing (TPS).
 
-Second, *surgical* action-space-smoothness intervention for the mediation
-argument (review fix item 3): unlike spectral norm (global Lipschitz /
-function-class constraint that conflicts with LayerNorm), TPS only changes
-WHERE the target critic is evaluated — next actions are perturbed with
-clipped Gaussian noise (Fujimoto et al. 2018) — leaving architecture,
-losses, and optimization untouched.
+Next actions are perturbed with clipped Gaussian noise before target-critic
+evaluation (Fujimoto et al. 2018).
 
 a'_used = clip(a' + clip(eps, -c, c), -1, 1),  eps ~ N(0, sigma^2),
 c = 2.5 * sigma (TD3's 0.2/0.5 ratio), actions rescaled to [-1, 1] by
-wrap_gym. sigma = 0 reproduces SACLearnerV2.update_critic exactly.
+wrap_gym. sigma = 0 removes the perturbation, but this implementation still
+consumes additional random keys compared with SACLearnerV2.
 
 If backup_entropy were True, log-probs are computed at the UNPERTURBED
 sampled action (perturbed actions can sit on the tanh boundary where
@@ -24,7 +21,7 @@ import optax
 from flax import struct
 from rlpd.networks import subsample_ensemble
 
-from sac_learner_v2 import SACLearnerV2
+from ensemble_sensitivity.agents.sac import SACLearnerV2
 
 
 class SACLearnerV2TPS(SACLearnerV2):

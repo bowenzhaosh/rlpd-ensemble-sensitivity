@@ -1,7 +1,7 @@
 # Analysis pipeline
 
 From the repository root, activate the environment described in the
-[top-level README](../README.md#reproduce-the-analysis), then run:
+[top-level README](../README.md#reproduce-the-paper), then run:
 
 ```bash
 bash analysis/run_all.sh --no-pdf  # tables and figures
@@ -35,7 +35,8 @@ python analysis/validate_data.py --checksums --onpolicy
 python analysis/onpolicy_analysis.py
 ```
 
-The tested stack is Python 3.11.7 with `requirements.txt` in this directory.
+The tested stack is Python 3.11.7 with
+[`requirements/analysis.txt`](../requirements/analysis.txt).
 Generated numerical artifacts and figure PDFs matched the committed versions in
 that environment. Figure timestamps are suppressed, but rendering dependencies
 and platforms can still affect PDF bytes.

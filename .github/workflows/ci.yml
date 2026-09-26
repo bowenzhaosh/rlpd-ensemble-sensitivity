@@ -21,10 +21,14 @@ jobs:
           python-version: '3.11'
           cache: pip
           cache-dependency-path: |
-            analysis/requirements.txt
-            requirements-dev.txt
+            requirements/analysis.txt
+            requirements/dev.txt
       - name: Install analysis and development dependencies
-        run: python -m pip install -r requirements-dev.txt
+        run: python -m pip install -r requirements/dev.txt .
+      - name: Check installed package without training dependencies
+        run: |
+          cd "$RUNNER_TEMP"
+          python -c "import ensemble_sensitivity; from importlib.util import find_spec; assert find_spec('ensemble_sensitivity.training.grid'); assert find_spec('ensemble_sensitivity.training.tps'); assert find_spec('ensemble_sensitivity.training.diagnostic')"
       - name: Validate citation metadata
         run: cffconvert --validate
       - name: Static checks and regression tests

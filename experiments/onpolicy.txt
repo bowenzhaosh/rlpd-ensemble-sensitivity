@@ -1,6 +1,6 @@
 # Supplementary on-policy probe: 9 runs, seed 0
 # Format: env,seed,nqs,minqs,dropout,maxsteps
-# Use train_abc.py with --onpolicy_probe=True and a separate results_dir.
+# Use ensemble_sensitivity.training.grid with --onpolicy_probe=True and a separate results_dir.
 
 pen-binary-v0,0,2,2,0,1000000
 pen-binary-v0,0,4,2,0,1000000

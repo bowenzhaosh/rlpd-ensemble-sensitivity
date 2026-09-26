@@ -1,5 +1,5 @@
 # Copied from / derived from ikostrikov/rlpd (MIT, Copyright (c) 2022 Ilya Kostrikov, Philip J. Ball, Laura Smith); see LICENSE-rlpd.
-"""train_diagnostic.py — pen-binary with per-head Q diagnostics."""
+"""Train pen-binary with historical per-head Q diagnostics."""
 import os
 import csv
 import json
@@ -15,7 +15,7 @@ import tqdm
 from absl import app, flags
 from ml_collections import config_flags
 import wandb
-from sac_learner_v2 import SACLearnerV2
+from ensemble_sensitivity.agents.sac import SACLearnerV2
 from rlpd.data import ReplayBuffer
 from rlpd.data.d4rl_datasets import D4RLDataset
 try:
@@ -25,7 +25,7 @@ except ImportError as exc:
     BINARY_DATASET_IMPORT_ERROR = exc
 from rlpd.evaluation import evaluate
 from rlpd.wrappers import wrap_gym
-from diagnostic import setup_diag_buffer, run_diagnostic
+from ensemble_sensitivity.diagnostics import setup_diag_buffer, run_diagnostic
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string("project_name", "rlpd_diag", "wandb project.")
@@ -69,7 +69,8 @@ def combine(one_dict, other_dict):
 def main(_):
     if FLAGS.critic_reset_step != 0:
         raise ValueError(
-            "train_diagnostic.py does not implement critic resets; use train_abc.py")
+            "The diagnostic trainer does not implement critic resets; "
+            "use ensemble_sensitivity.training.grid")
     kwargs = dict(FLAGS.config)
     kwargs.pop("model_cls")
     nqs = kwargs.get("num_qs", 10)

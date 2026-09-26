@@ -1,7 +1,5 @@
 # Copied from / derived from ikostrikov/rlpd (MIT, Copyright (c) 2022 Ilya Kostrikov, Philip J. Ball, Laura Smith); see LICENSE-rlpd.
-"""train_abc_tps.py — train_abc.py + TD3-style target-policy smoothing
-(TPS) arm. Generated from train_abc.py; only the learner class, the
-target_smoothing_sigma flag, and the run name differ."""
+"""Train the target-policy-smoothing arm of the ensemble study."""
 import os
 import csv
 import json
@@ -17,7 +15,7 @@ import tqdm
 from absl import app, flags
 from ml_collections import config_flags
 import wandb
-from sac_learner_v2_tps import SACLearnerV2TPS as SACLearnerV2
+from ensemble_sensitivity.agents.tps import SACLearnerV2TPS as SACLearnerV2
 from rlpd.data import ReplayBuffer
 from rlpd.data.d4rl_datasets import D4RLDataset
 try:
@@ -27,7 +25,7 @@ except ImportError as exc:
     BINARY_DATASET_IMPORT_ERROR = exc
 from rlpd.evaluation import evaluate
 from rlpd.wrappers import wrap_gym
-from diagnostic import setup_diag_buffer, compute_roughness_multi
+from ensemble_sensitivity.diagnostics import setup_diag_buffer, compute_roughness_multi
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string("project_name", "rlpd_abc", "wandb project.")

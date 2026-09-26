@@ -21,8 +21,11 @@ htmlcov/
 .env.*
 !.env.example
 .DS_Store
-.claude/
 *.zip
+
+# Python package builds
+/build/
+/dist/
 
 # Generated manuscript build
 paper/build/

@@ -12,7 +12,7 @@ Usage: bash analysis/run_all.sh [--local] [--no-pdf]
   --help    Show this message.
 
 Activate the analysis environment first, or set RLPD_PY to its Python executable.
-Install dependencies with: python -m pip install -r analysis/requirements.txt
+Install dependencies with: python -m pip install -r requirements/analysis.txt
 HELP
 }
 
@@ -31,7 +31,7 @@ command -v "$PY" >/dev/null 2>&1 || {
   echo "ERROR: Python executable not found: $PY" >&2; exit 1;
 }
 "$PY" -c 'import numpy, pandas, scipy, matplotlib' || {
-  echo "ERROR: install analysis/requirements.txt into $PY's environment" >&2; exit 1;
+  echo "ERROR: install requirements/analysis.txt into $PY's environment" >&2; exit 1;
 }
 if $PDF && ! command -v latexmk >/dev/null 2>&1; then
   echo "ERROR: latexmk is required for the PDF; install LaTeX or pass --no-pdf" >&2

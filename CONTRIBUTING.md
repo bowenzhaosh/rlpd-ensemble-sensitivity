@@ -9,7 +9,7 @@ and private paths from logs before posting.
 Use Python 3.11 in a virtual environment:
 
 ```bash
-python -m pip install -r requirements-dev.txt
+python -m pip install -r requirements/dev.txt -e .
 python -m pytest -q
 python -m ruff check .
 cffconvert --validate

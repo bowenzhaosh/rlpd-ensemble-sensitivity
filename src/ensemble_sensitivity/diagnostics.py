@@ -1,4 +1,4 @@
-"""diagnostic.py — Multi-head Q diagnostics for RLPD ablation runs.
+"""Multi-head Q diagnostics for RLPD ablation runs.
 
 Metrics computed on a fixed buffer of (s, a) pairs:
   - Pairwise correlation, |Qi - Qj|, ensemble std (head diversity)
@@ -126,7 +126,7 @@ def _compute_mask_var(agent, obs, act, n_samples=10, seed=123):
 
 
 def compute_roughness_only(agent, diag_buf):
-    """Lightweight roughness computation for use by train_abc.py."""
+    """Lightweight roughness computation for the grid trainer."""
     return _compute_roughness(agent, diag_buf["obs"], diag_buf["act_expert"])
 
 

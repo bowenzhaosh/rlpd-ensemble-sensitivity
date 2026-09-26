@@ -1,6 +1,6 @@
 # GPU training environment (conda env `rlpd`), Python 3.10 + CUDA 12.
 # Declared package versions for the archived June-2026 training harness.
-# The analysis/paper pipeline needs only analysis/requirements.txt.
+# The analysis/paper pipeline needs only requirements/analysis.txt.
 # Install order: numpy/Cython first, then mujoco-py, then JAX, then the rest.
 # See scripts/setup_training.sh for installation and docs/training.md for limitations.
 
